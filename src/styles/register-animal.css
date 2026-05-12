@@ -1,0 +1,212 @@
+.register-animal-page {
+  min-height: 100vh;
+  padding: 20px;
+  display: grid;
+  gap: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(31, 93, 77, 0.16), transparent 24%),
+    radial-gradient(circle at top right, rgba(171, 138, 87, 0.14), transparent 28%),
+    linear-gradient(180deg, #fbf7ef 0%, var(--app-bg) 100%);
+}
+
+.register-animal-hero,
+.register-animal-card {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+}
+
+.register-animal-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  gap: 24px;
+}
+
+.register-animal-hero__copy,
+.register-animal-hero__panel,
+.register-animal-card {
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(10px);
+}
+
+.register-animal-hero__copy {
+  padding: clamp(28px, 4vw, 52px);
+  display: grid;
+  gap: 18px;
+  align-content: center;
+}
+
+.register-animal-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.register-animal-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.register-animal-hero h1 {
+  font-size: clamp(2.6rem, 5.5vw, 4.8rem);
+  line-height: 0.96;
+  letter-spacing: -0.07em;
+  max-width: 11ch;
+}
+
+.register-animal-hero p {
+  max-width: 56ch;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.register-animal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(31, 93, 77, 0.08);
+  color: var(--text-primary);
+  border: 1px solid rgba(31, 93, 77, 0.12);
+  width: fit-content;
+}
+
+.register-animal-hero__panel {
+  padding: 28px;
+  display: grid;
+  gap: 14px;
+  align-content: center;
+  background: linear-gradient(180deg, rgba(28, 67, 56, 0.97), rgba(28, 67, 56, 0.84));
+  color: #fff;
+}
+
+.register-animal-hero__panel svg {
+  font-size: 1.4rem;
+  color: #f5dfbc;
+}
+
+.register-animal-card {
+  padding: clamp(22px, 3vw, 32px);
+}
+
+.register-animal-form {
+  display: grid;
+  gap: 14px;
+}
+
+.register-animal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.register-animal-grid--checks {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.register-animal-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.register-animal-form input,
+.register-animal-form select,
+.register-animal-form textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+  outline: none;
+}
+
+.register-animal-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.register-animal-form input:focus,
+.register-animal-form select:focus,
+.register-animal-form textarea:focus,
+.register-animal-back:focus-visible,
+.register-animal-button:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.register-animal-check {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 10px;
+}
+
+.register-animal-check input {
+  width: auto;
+  min-height: auto;
+}
+
+.register-animal-alert {
+  padding: 14px 16px;
+  border-radius: 16px;
+}
+
+.register-animal-alert--error {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid #ffd2d2;
+}
+
+.register-animal-alert--success {
+  background: #eefaf1;
+  color: #0f7a36;
+  border: 1px solid #bfeacb;
+}
+
+.register-animal-button {
+  min-height: 50px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--accent) 0%, #20493d 100%);
+  color: #fff;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.register-animal-loading {
+  min-height: 480px;
+  display: grid;
+  place-items: center;
+}
+
+@media (max-width: 1080px) {
+  .register-animal-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .register-animal-page {
+    padding: 16px;
+  }
+
+  .register-animal-grid,
+  .register-animal-grid--checks {
+    grid-template-columns: 1fr;
+  }
+}

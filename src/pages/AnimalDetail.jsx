@@ -52,7 +52,15 @@ function getOwnerName(tutor) {
   return tutor.nome || tutor.razaoSocial || tutor.nomeFantasia || "Equipe responsável"
 }
 
+function getTutorContact(tutor) {
+  if (!tutor) return ""
+
+  return tutor.telefone || tutor.celular || tutor.whatsapp || tutor.fone || ""
+}
+
 function ContactModal({ tutor, onClose }) {
+  const tutorPhone = getTutorContact(tutor)
+
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-card">
@@ -64,7 +72,7 @@ function ContactModal({ tutor, onClose }) {
         {tutor ? (
           <div className="modal-body">
             <p className="modal-body__name"><strong>{getOwnerName(tutor)}</strong></p>
-            {tutor.telefone && <p><FaPhone /> {tutor.telefone}</p>}
+            {tutorPhone ? <p><FaPhone /> {tutorPhone}</p> : <p><FaPhone /> Telefone não cadastrado</p>}
             {tutor.email && <p><FaEnvelope /> {tutor.email}</p>}
             <p className="modal-note">Esta vitrine conecta você diretamente ao responsável para combinar os próximos passos da adoção.</p>
           </div>
@@ -94,18 +102,18 @@ function AnimalDetail() {
     let mounted = true
 
     async function load() {
-      if (initialAnimal && String(initialAnimal.id) === String(id)) {
-        setAnimal(initialAnimal)
-        setLoading(false)
-        return
-      }
-
       setLoading(true)
       try {
-        const data = await getPublicAnimal(id)
-        if (mounted) setAnimal(data)
+        const publicAnimal = await getPublicAnimal(id)
+        const baseAnimal = initialAnimal && String(initialAnimal.id) === String(id) ? initialAnimal : null
+        const mergedAnimal = {
+          ...publicAnimal,
+          ...baseAnimal
+        }
 
-        const tutorId = data?.tutorId ?? data?.tutor?.id
+        if (mounted) setAnimal(mergedAnimal)
+
+        const tutorId = mergedAnimal?.tutorId ?? mergedAnimal?.tutor?.id ?? mergedAnimal?.usuario?.id
         if (tutorId) {
           try {
             const user = await getUsuario(tutorId)
@@ -312,15 +320,15 @@ function AnimalDetail() {
               </div>
 
               <div className="animal-contact-card__list">
-                {tutor?.telefone ? (
-                  <a href={`tel:${tutor.telefone}`}>
+                {getTutorContact(tutor) ? (
+                  <a href={`tel:${getTutorContact(tutor)}`}>
                     <FaPhone />
-                    {tutor.telefone}
+                    {getTutorContact(tutor)}
                   </a>
                 ) : (
                   <div>
                     <FaPhone />
-                    Telefone não disponível
+                    Telefone não cadastrado
                   </div>
                 )}
 

@@ -41,7 +41,7 @@ function Login() {
         await new Promise((resolve) => setTimeout(resolve, remainingTime))
       }
 
-      navigate("/dashboard")
+      navigate("/")
 
     } catch (error) {
 

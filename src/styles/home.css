@@ -81,6 +81,12 @@
 }
 
 .home-nav__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-nav__cta {
   background: linear-gradient(135deg, var(--accent) 0%, #20493d 100%);
   color: #fff;
   border-color: transparent;

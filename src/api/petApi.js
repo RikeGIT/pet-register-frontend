@@ -1,5 +1,57 @@
 import api from "./axios"
 
+export const OWNED_ANIMALS_STORAGE_KEY = "pet-register:owned-animals"
+
+function getUserOwnershipKey(user) {
+  return String(
+    user?.id
+    ?? user?.usuarioId
+    ?? user?.userId
+    ?? user?.email
+    ?? user?.cpf
+    ?? user?.telefone
+    ?? ""
+  ).trim().toLowerCase()
+}
+
+export function readOwnedAnimalsCache() {
+  try {
+    const rawValue = localStorage.getItem(OWNED_ANIMALS_STORAGE_KEY)
+    return rawValue ? JSON.parse(rawValue) : []
+  } catch (error) {
+    return []
+  }
+}
+
+export function writeOwnedAnimalCache(user, animal) {
+  const ownerKey = getUserOwnershipKey(user)
+
+  if (!ownerKey || !animal) {
+    return
+  }
+
+  const currentAnimals = readOwnedAnimalsCache()
+  const nextAnimal = {
+    ...animal,
+    ownerKey,
+    ownerId: user?.id ?? animal?.ownerId ?? null
+  }
+
+  const nextAnimals = [
+    nextAnimal,
+    ...currentAnimals.filter((item) => {
+      const itemOwnerKey = String(item?.ownerKey ?? item?.ownerId ?? item?.usuarioId ?? item?.tutorId ?? item?.criadoPorId ?? "").trim().toLowerCase()
+      return String(item.id) !== String(nextAnimal.id) || itemOwnerKey !== ownerKey
+    })
+  ]
+
+  localStorage.setItem(OWNED_ANIMALS_STORAGE_KEY, JSON.stringify(nextAnimals))
+}
+
+export function getUserOwnershipKeyFromUser(user) {
+  return getUserOwnershipKey(user)
+}
+
 export async function getPublicAnimals(params = {}) {
   const response = await api.get("/api/public/animals", { params })
   return response.data
@@ -27,6 +79,16 @@ export async function getPublicAnimal(id) {
 
 export async function createAnimal(payload) {
   const response = await api.post("/api/animals", payload)
+  return response.data
+}
+
+export async function listMyAnimals() {
+  const response = await api.get("/api/animals")
+  return response.data
+}
+
+export async function updateAnimal(id, payload) {
+  const response = await api.put(`/api/animals/${id}`, payload)
   return response.data
 }
 
@@ -65,5 +127,10 @@ export async function listMySolicitacoes() {
 
 export async function getUsuario(id) {
   const response = await api.get(`/api/usuarios/${id}`)
+  return response.data
+}
+
+export async function updateUsuario(id, payload) {
+  const response = await api.put(`/api/usuarios/${id}`, payload)
   return response.data
 }

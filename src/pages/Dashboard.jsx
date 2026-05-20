@@ -1,70 +1,103 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { FaArrowLeft, FaSignOutAlt, FaPaperPlane, FaHandsHelping, FaCalendarAlt } from "react-icons/fa"
+import { FaArrowLeft, FaCamera, FaDog, FaPaw, FaSave, FaSignOutAlt, FaUserEdit } from "react-icons/fa"
 
 import { useAuth } from "../context/AuthContext"
 import PawLoader from "../components/PawLoader"
 import AnimalCard from "../components/AnimalCard"
-import {
-  createAdocao,
-  createSolicitacao,
-  getPublicAnimals,
-  listMyAdocoes,
-  listMySolicitacoes
-} from "../api/petApi"
+import { getUsuario, listMyAnimals, updateAnimal, updateUsuario, uploadAnimalPhoto } from "../api/petApi"
 
 import "../styles/dashboard.css"
 
-const SOLICITACAO_TIPOS = ["CIRURGIA", "CONSULTA", "CASTRACAO"]
+const SPECIES_OPTIONS = ["Cachorro", "Gato", "Coelho", "Ave"]
 
-function unwrapPage(data) {
-  if (Array.isArray(data)) {
-    return data
+const DEFAULT_ANIMAL_FORM = {
+  nome: "",
+  especie: "Cachorro",
+  raca: "",
+  idade: "",
+  peso: "",
+  observacoes: "",
+  descricaoPublica: "",
+  publico: true,
+  destaque: false,
+  statusAdocao: "DISPONIVEL"
+}
+
+function buildProfileForm(user) {
+  const storedPhone = localStorage.getItem("pet-register:last-user-phone") ?? ""
+
+  return {
+    nome: user?.nome ?? "",
+    email: user?.email ?? "",
+    cpf: user?.cpf ?? "",
+    telefone: user?.telefone ?? storedPhone,
+    perfil: user?.perfil ?? "",
+    senha: user?.senha ?? ""
+  }
+}
+
+function buildAnimalForm(animal) {
+  if (!animal) {
+    return { ...DEFAULT_ANIMAL_FORM }
   }
 
-  return data?.content ?? []
+  return {
+    nome: animal.nome ?? "",
+    especie: animal.especie ?? "Cachorro",
+    raca: animal.raca ?? "",
+    idade: animal.idade ?? "",
+    peso: animal.peso ?? "",
+    observacoes: animal.observacoes ?? "",
+    descricaoPublica: animal.descricaoPublica ?? "",
+    publico: animal.publico ?? true,
+    destaque: animal.destaque ?? false,
+    statusAdocao: animal.statusAdocao ?? "DISPONIVEL"
+  }
+}
+
+function buildAnimalPayload(form) {
+  return {
+    nome: form.nome,
+    especie: form.especie,
+    raca: form.raca,
+    idade: form.idade ? Number(form.idade) : null,
+    peso: form.peso ? Number(form.peso) : null,
+    observacoes: form.observacoes,
+    descricaoPublica: form.descricaoPublica,
+    publico: form.publico,
+    destaque: form.destaque,
+    statusAdocao: form.statusAdocao
+  }
 }
 
 function Dashboard() {
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user, logout, refreshUser } = useAuth()
 
   const [animals, setAnimals] = useState([])
-  const [myAdocoes, setMyAdocoes] = useState([])
-  const [mySolicitacoes, setMySolicitacoes] = useState([])
   const [loading, setLoading] = useState(true)
-  const [submittingAdocao, setSubmittingAdocao] = useState(false)
-  const [submittingSolicitacao, setSubmittingSolicitacao] = useState(false)
+  const [profileSubmitting, setProfileSubmitting] = useState(false)
+  const [animalSubmitting, setAnimalSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-
-  const [adocaoForm, setAdocaoForm] = useState({
-    animalId: "",
-    mensagem: "",
-    telefoneContato: ""
-  })
-
-  const [solicitacaoForm, setSolicitacaoForm] = useState({
-    tipo: "CIRURGIA",
-    animalId: "",
-    descricao: "",
-    contato: ""
-  })
+  const [profileForm, setProfileForm] = useState(() => buildProfileForm(null))
+  const [selectedAnimalId, setSelectedAnimalId] = useState("")
+  const [animalForm, setAnimalForm] = useState(() => buildAnimalForm(null))
+  const [animalPhoto, setAnimalPhoto] = useState(null)
 
   async function loadDashboard() {
     setLoading(true)
     setError("")
 
     try {
-      const [animalsResponse, adocoesResponse, solicitacoesResponse] = await Promise.all([
-        getPublicAnimals({ page: 0, size: 50 }),
-        listMyAdocoes(),
-        listMySolicitacoes()
+      const [animalsResponse, userResponse] = await Promise.all([
+        listMyAnimals(),
+        user?.id ? getUsuario(user.id) : Promise.resolve(null)
       ])
 
-      setAnimals(unwrapPage(animalsResponse))
-      setMyAdocoes(adocoesResponse)
-      setMySolicitacoes(solicitacoesResponse)
+      setAnimals(Array.isArray(animalsResponse) ? animalsResponse : [])
+      setProfileForm(buildProfileForm({ ...user, ...userResponse }))
     } catch (requestError) {
       setError("Não foi possível carregar seus dados no momento.")
     } finally {
@@ -76,56 +109,92 @@ function Dashboard() {
     loadDashboard()
   }, [])
 
-  const quickStats = useMemo(() => ([
-    { label: "Adoções enviadas", value: myAdocoes.length },
-    { label: "Solicitações abertas", value: mySolicitacoes.length },
-    { label: "Animais na vitrine", value: animals.length }
-  ]), [animals.length, myAdocoes.length, mySolicitacoes.length])
+  const myAnimals = useMemo(() => animals, [animals])
 
-  async function handleSubmitAdocao(event) {
+  useEffect(() => {
+    if (myAnimals.length === 0) {
+      setSelectedAnimalId("")
+      setAnimalForm(buildAnimalForm(null))
+      setAnimalPhoto(null)
+      return
+    }
+
+    const stillExists = myAnimals.some((animal) => String(animal.id) === String(selectedAnimalId))
+
+    if (!stillExists) {
+      setSelectedAnimalId(String(myAnimals[0].id))
+    }
+  }, [myAnimals, selectedAnimalId])
+
+  const selectedAnimal = useMemo(
+    () => myAnimals.find((animal) => String(animal.id) === String(selectedAnimalId)) ?? null,
+    [myAnimals, selectedAnimalId]
+  )
+
+  useEffect(() => {
+    setAnimalForm(buildAnimalForm(selectedAnimal))
+    setAnimalPhoto(null)
+  }, [selectedAnimal?.id])
+
+  const quickStats = useMemo(() => ([
+    { label: "Dados do perfil", value: 3, icon: FaUserEdit },
+    { label: "Animais sob sua gestão", value: myAnimals.length, icon: FaDog },
+    { label: "Perfil autenticado", value: user?.perfil || "USUÁRIO", icon: FaPaw }
+  ]), [myAnimals.length, user?.perfil])
+
+  async function handleSubmitProfile(event) {
     event.preventDefault()
-    setSubmittingAdocao(true)
+    setProfileSubmitting(true)
     setError("")
     setSuccess("")
 
     try {
-      await createAdocao({
-        animalId: Number(adocaoForm.animalId),
-        mensagem: adocaoForm.mensagem,
-        telefoneContato: adocaoForm.telefoneContato
+      await updateUsuario(user.id, {
+        nome: profileForm.nome,
+        email: profileForm.email,
+        cpf: profileForm.cpf,
+        telefone: profileForm.telefone,
+        perfil: profileForm.perfil,
+        senha: profileForm.senha
       })
 
-      setAdocaoForm({ animalId: "", mensagem: "", telefoneContato: "" })
-      setSuccess("Pedido de adoção enviado com sucesso.")
-      await loadDashboard()
+      if (typeof refreshUser === "function") {
+        await refreshUser()
+      }
+
+      setSuccess("Seu perfil foi atualizado com sucesso.")
     } catch (requestError) {
-      setError("Não foi possível enviar o pedido de adoção.")
+      setError("Não foi possível atualizar seu perfil.")
     } finally {
-      setSubmittingAdocao(false)
+      setProfileSubmitting(false)
     }
   }
 
-  async function handleSubmitSolicitacao(event) {
+  async function handleSubmitAnimal(event) {
     event.preventDefault()
-    setSubmittingSolicitacao(true)
+    setAnimalSubmitting(true)
     setError("")
     setSuccess("")
 
-    try {
-      await createSolicitacao({
-        tipo: solicitacaoForm.tipo,
-        animalId: Number(solicitacaoForm.animalId),
-        descricao: solicitacaoForm.descricao,
-        contato: solicitacaoForm.contato
-      })
+    if (!selectedAnimal) {
+      setError("Selecione um animal para editar.")
+      setAnimalSubmitting(false)
+      return
+    }
 
-      setSolicitacaoForm({ tipo: "CIRURGIA", animalId: "", descricao: "", contato: "" })
-      setSuccess("Solicitação enviada com sucesso.")
+    try {
+      await updateAnimal(selectedAnimal.id, buildAnimalPayload(animalForm))
+
+      if (animalPhoto) {
+        await uploadAnimalPhoto(selectedAnimal.id, animalPhoto)
+      }
+
       await loadDashboard()
+      setSuccess("Animal atualizado com sucesso.")
     } catch (requestError) {
-      setError("Não foi possível enviar a solicitação.")
+      setError("Não foi possível atualizar o animal.")
     } finally {
-      setSubmittingSolicitacao(false)
+      setAnimalSubmitting(false)
     }
   }
 
@@ -137,7 +206,7 @@ function Dashboard() {
   if (loading) {
     return (
       <div className="dashboard-page dashboard-page--loading">
-        <PawLoader label="Carregando seu painel..." />
+        <PawLoader label="Carregando seu perfil..." />
       </div>
     )
   }
@@ -150,10 +219,10 @@ function Dashboard() {
             <FaArrowLeft />
             Voltar para a vitrine
           </Link>
-          <p className="dashboard-eyebrow">Área autenticada</p>
+          <p className="dashboard-eyebrow">Meu perfil</p>
           <h1>Olá, {user?.nome || "usuário"}.</h1>
           <p className="dashboard-subtitle">
-            Aqui você acompanha suas adoções, envia solicitações de atendimento e mantém tudo centralizado.
+            Aqui você atualiza seus dados e edita os animais que colocou para adoção.
           </p>
         </div>
 
@@ -164,12 +233,17 @@ function Dashboard() {
       </header>
 
       <section className="dashboard-stats">
-        {quickStats.map((stat) => (
-          <article key={stat.label} className="dashboard-stat-card">
-            <strong>{stat.value}</strong>
-            <span>{stat.label}</span>
-          </article>
-        ))}
+        {quickStats.map((stat) => {
+          const Icon = stat.icon
+
+          return (
+            <article key={stat.label} className="dashboard-stat-card">
+              <span className="dashboard-stat-card__icon"><Icon /></span>
+              <strong>{stat.value}</strong>
+              <span>{stat.label}</span>
+            </article>
+          )
+        })}
       </section>
 
       {error && <div className="dashboard-alert dashboard-alert--error">{error}</div>}
@@ -179,189 +253,235 @@ function Dashboard() {
         <article className="dashboard-panel">
           <div className="dashboard-panel__header">
             <div>
-              <p className="dashboard-eyebrow">Adoção</p>
-              <h2>Enviar pedido de adoção</h2>
+              <p className="dashboard-eyebrow">Conta</p>
+              <h2>Editar meus dados</h2>
             </div>
-            <FaHandsHelping />
+            <FaUserEdit />
           </div>
 
-          <form className="dashboard-form" onSubmit={handleSubmitAdocao}>
+          <form className="dashboard-form" onSubmit={handleSubmitProfile}>
             <label>
-              Animal
-              <select
-                value={adocaoForm.animalId}
-                onChange={(event) => setAdocaoForm((current) => ({ ...current, animalId: event.target.value }))}
+              Nome
+              <input
+                type="text"
+                value={profileForm.nome}
+                onChange={(event) => setProfileForm((current) => ({ ...current, nome: event.target.value }))}
                 required
-              >
-                <option value="">Selecione um animal</option>
-                {animals.map((animal) => (
-                  <option key={animal.id} value={animal.id}>
-                    {animal.nome} - {animal.especie}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
 
             <label>
-              Telefone de contato
+              Email
+              <input
+                type="email"
+                value={profileForm.email}
+                onChange={(event) => setProfileForm((current) => ({ ...current, email: event.target.value }))}
+                required
+              />
+            </label>
+
+            <label>
+              CPF
               <input
                 type="text"
-                value={adocaoForm.telefoneContato}
-                onChange={(event) => setAdocaoForm((current) => ({ ...current, telefoneContato: event.target.value }))}
+                value={profileForm.cpf}
+                onChange={(event) => setProfileForm((current) => ({ ...current, cpf: event.target.value }))}
+                placeholder="000.000.000-00"
+                required
+              />
+            </label>
+
+            <label>
+              Telefone
+              <input
+                type="text"
+                value={profileForm.telefone}
+                onChange={(event) => setProfileForm((current) => ({ ...current, telefone: event.target.value }))}
                 placeholder="(11) 99999-9999"
-                required
               />
             </label>
 
             <label>
-              Mensagem
-              <textarea
-                rows="4"
-                value={adocaoForm.mensagem}
-                onChange={(event) => setAdocaoForm((current) => ({ ...current, mensagem: event.target.value }))}
-                placeholder="Conte por que quer adotar este animal"
-                required
-              />
+              Perfil
+              <input type="text" value={user?.perfil || "USUÁRIO"} disabled />
             </label>
 
-            <button type="submit" className="dashboard-button" disabled={submittingAdocao}>
-              <FaPaperPlane />
-              {submittingAdocao ? "Enviando..." : "Enviar pedido"}
+            <button type="submit" className="dashboard-button" disabled={profileSubmitting}>
+              <FaSave />
+              {profileSubmitting ? "Salvando..." : "Salvar perfil"}
             </button>
           </form>
         </article>
 
-        <article className="dashboard-panel">
+        <article className="dashboard-panel dashboard-panel--animals">
           <div className="dashboard-panel__header">
             <div>
-              <p className="dashboard-eyebrow">Atendimento</p>
-              <h2>Solicitar serviço</h2>
+              <p className="dashboard-eyebrow">Animais</p>
+              <h2>Editar animais cadastrados</h2>
             </div>
-            <FaCalendarAlt />
+            <Link to="/pets/novo" className="dashboard-panel__link">
+              Cadastrar novo
+            </Link>
           </div>
 
-          <form className="dashboard-form" onSubmit={handleSubmitSolicitacao}>
-            <label>
-              Tipo
-              <select
-                value={solicitacaoForm.tipo}
-                onChange={(event) => setSolicitacaoForm((current) => ({ ...current, tipo: event.target.value }))}
-              >
-                {SOLICITACAO_TIPOS.map((tipo) => (
-                  <option key={tipo} value={tipo}>
-                    {tipo}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              Animal
-              <select
-                value={solicitacaoForm.animalId}
-                onChange={(event) => setSolicitacaoForm((current) => ({ ...current, animalId: event.target.value }))}
-                required
-              >
-                <option value="">Selecione um animal</option>
-                {animals.map((animal) => (
-                  <option key={animal.id} value={animal.id}>
-                    {animal.nome} - {animal.especie}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              Contato
-              <input
-                type="text"
-                value={solicitacaoForm.contato}
-                onChange={(event) => setSolicitacaoForm((current) => ({ ...current, contato: event.target.value }))}
-                placeholder="Telefone ou e-mail"
-                required
-              />
-            </label>
-
-            <label>
-              Descrição
-              <textarea
-                rows="4"
-                value={solicitacaoForm.descricao}
-                onChange={(event) => setSolicitacaoForm((current) => ({ ...current, descricao: event.target.value }))}
-                placeholder="Descreva a necessidade do atendimento"
-                required
-              />
-            </label>
-
-            <button type="submit" className="dashboard-button" disabled={submittingSolicitacao}>
-              <FaPaperPlane />
-              {submittingSolicitacao ? "Enviando..." : "Enviar solicitação"}
-            </button>
-          </form>
-        </article>
-      </section>
-
-      <section className="dashboard-grid dashboard-grid--lists">
-        <article className="dashboard-panel">
-          <div className="dashboard-panel__header">
-            <div>
-              <p className="dashboard-eyebrow">Histórico</p>
-              <h2>Minhas adoções</h2>
+          <div className="dashboard-animal-manager">
+            <div className="dashboard-animal-manager__list">
+              {myAnimals.length === 0 ? (
+                <div className="dashboard-empty dashboard-empty--soft">
+                  Você ainda não cadastrou animais para editar.
+                </div>
+              ) : (
+                myAnimals.map((animal) => (
+                  <AnimalCard
+                    key={animal.id}
+                    animal={animal}
+                    featured={String(animal.id) === String(selectedAnimalId)}
+                    actionLabel={String(animal.id) === String(selectedAnimalId) ? "Em edição" : "Editar"}
+                    onAction={() => setSelectedAnimalId(String(animal.id))}
+                  />
+                ))
+              )}
             </div>
-          </div>
 
-          <div className="dashboard-list">
-            {myAdocoes.length === 0 ? (
-              <p className="dashboard-empty">Nenhum pedido de adoção enviado ainda.</p>
-            ) : (
-              myAdocoes.map((item) => (
-                <article className="dashboard-list-item" key={item.id}>
-                  <strong>{item.nomeAnimal}</strong>
-                  <span>Status: {item.status}</span>
-                  <p>{item.mensagem}</p>
-                </article>
-              ))
-            )}
+            <form className="dashboard-form dashboard-form--animal" onSubmit={handleSubmitAnimal}>
+              <div className="dashboard-panel__header dashboard-panel__header--compact">
+                <div>
+                  <p className="dashboard-eyebrow">Edição</p>
+                  <h3>{selectedAnimal ? `Editando ${selectedAnimal.nome}` : "Selecione um animal"}</h3>
+                </div>
+                <FaCamera />
+              </div>
+
+              {selectedAnimal ? (
+                <>
+                  <label>
+                    Nome
+                    <input
+                      type="text"
+                      value={animalForm.nome}
+                      onChange={(event) => setAnimalForm((current) => ({ ...current, nome: event.target.value }))}
+                      required
+                    />
+                  </label>
+
+                  <label>
+                    Espécie
+                    <select
+                      value={animalForm.especie}
+                      onChange={(event) => setAnimalForm((current) => ({ ...current, especie: event.target.value }))}
+                    >
+                      {SPECIES_OPTIONS.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label>
+                    Raça
+                    <input
+                      type="text"
+                      value={animalForm.raca}
+                      onChange={(event) => setAnimalForm((current) => ({ ...current, raca: event.target.value }))}
+                    />
+                  </label>
+
+                  <div className="dashboard-form-grid">
+                    <label>
+                      Idade
+                      <input
+                        type="number"
+                        min="0"
+                        value={animalForm.idade}
+                        onChange={(event) => setAnimalForm((current) => ({ ...current, idade: event.target.value }))}
+                      />
+                    </label>
+
+                    <label>
+                      Peso
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={animalForm.peso}
+                        onChange={(event) => setAnimalForm((current) => ({ ...current, peso: event.target.value }))}
+                      />
+                    </label>
+                  </div>
+
+                  <label>
+                    Status de adoção
+                    <select
+                      value={animalForm.statusAdocao}
+                      onChange={(event) => setAnimalForm((current) => ({ ...current, statusAdocao: event.target.value }))}
+                    >
+                      <option value="DISPONIVEL">Disponível</option>
+                      <option value="EM_PROCESSO">Em processo</option>
+                      <option value="RESERVADO">Reservado</option>
+                      <option value="ADOTADO">Adotado</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Descrição pública
+                    <textarea
+                      rows="4"
+                      value={animalForm.descricaoPublica}
+                      onChange={(event) => setAnimalForm((current) => ({ ...current, descricaoPublica: event.target.value }))}
+                      required
+                    />
+                  </label>
+
+                  <label>
+                    Observações internas
+                    <textarea
+                      rows="3"
+                      value={animalForm.observacoes}
+                      onChange={(event) => setAnimalForm((current) => ({ ...current, observacoes: event.target.value }))}
+                    />
+                  </label>
+
+                  <div className="dashboard-form-grid dashboard-form-grid--checks">
+                    <label className="dashboard-check">
+                      <input
+                        type="checkbox"
+                        checked={animalForm.publico}
+                        onChange={(event) => setAnimalForm((current) => ({ ...current, publico: event.target.checked }))}
+                      />
+                      Publicar na vitrine
+                    </label>
+
+                    <label className="dashboard-check">
+                      <input
+                        type="checkbox"
+                        checked={animalForm.destaque}
+                        onChange={(event) => setAnimalForm((current) => ({ ...current, destaque: event.target.checked }))}
+                      />
+                      Marcar como destaque
+                    </label>
+                  </div>
+
+                  <label>
+                    Foto nova
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => setAnimalPhoto(event.target.files?.[0] ?? null)}
+                    />
+                  </label>
+
+                  <button type="submit" className="dashboard-button" disabled={animalSubmitting}>
+                    <FaSave />
+                    {animalSubmitting ? "Salvando..." : "Salvar animal"}
+                  </button>
+                </>
+              ) : (
+                <div className="dashboard-empty dashboard-empty--soft">
+                  Escolha um animal da lista ao lado para editar os dados.
+                </div>
+              )}
+            </form>
           </div>
         </article>
-
-        <article className="dashboard-panel">
-          <div className="dashboard-panel__header">
-            <div>
-              <p className="dashboard-eyebrow">Histórico</p>
-              <h2>Minhas solicitações</h2>
-            </div>
-          </div>
-
-          <div className="dashboard-list">
-            {mySolicitacoes.length === 0 ? (
-              <p className="dashboard-empty">Nenhuma solicitação enviada ainda.</p>
-            ) : (
-              mySolicitacoes.map((item) => (
-                <article className="dashboard-list-item" key={item.id}>
-                  <strong>{item.nomeAnimal}</strong>
-                  <span>{item.tipo} • {item.status}</span>
-                  <p>{item.descricao}</p>
-                </article>
-              ))
-            )}
-          </div>
-        </article>
-      </section>
-
-      <section className="dashboard-panel dashboard-panel--catalog">
-        <div className="dashboard-panel__header">
-          <div>
-            <p className="dashboard-eyebrow">Catálogo</p>
-            <h2>Animais disponíveis para selecionar</h2>
-          </div>
-        </div>
-
-        <div className="dashboard-catalog">
-          {animals.slice(0, 6).map((animal) => (
-            <AnimalCard key={animal.id} animal={animal} />
-          ))}
-        </div>
       </section>
     </main>
   )

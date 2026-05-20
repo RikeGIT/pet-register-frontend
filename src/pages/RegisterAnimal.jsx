@@ -4,7 +4,7 @@ import { FaArrowLeft, FaCheckCircle, FaPaw, FaUpload } from "react-icons/fa"
 
 import { useAuth } from "../context/AuthContext"
 import PawLoader from "../components/PawLoader"
-import { createAnimal, uploadAnimalPhoto } from "../api/petApi"
+import { createAnimal, uploadAnimalPhoto, writeOwnedAnimalCache } from "../api/petApi"
 
 import "../styles/register-animal.css"
 
@@ -12,7 +12,7 @@ const DEFAULT_FORM = {
   nome: "",
   especie: "Cachorro",
   raca: "",
-  idade: "",
+  dataNascimento: "",
   peso: "",
   observacoes: "",
   descricaoPublica: "",
@@ -22,6 +22,20 @@ const DEFAULT_FORM = {
 }
 
 const SPECIES_OPTIONS = ["Cachorro", "Gato", "Coelho", "Ave"]
+const BREED_OPTIONS = ["SRD", "Labrador", "Poodle", "Siamês", "Persa", "Coelho Angorá", "Canário"]
+
+// Helper function to calculate age from birth date
+function calculateAge(dataNascimento) {
+  if (!dataNascimento) return null
+  const birthDate = new Date(dataNascimento)
+  const today = new Date()
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--
+  }
+  return age
+}
 
 function RegisterAnimal() {
   const navigate = useNavigate()
@@ -50,7 +64,7 @@ function RegisterAnimal() {
         nome: form.nome,
         especie: form.especie,
         raca: form.raca,
-        idade: form.idade ? Number(form.idade) : null,
+        dataNascimento: form.dataNascimento,
         peso: form.peso ? Number(form.peso) : null,
         observacoes: form.observacoes,
         descricaoPublica: form.descricaoPublica,
@@ -62,6 +76,8 @@ function RegisterAnimal() {
       if (photo && createdAnimal?.id) {
         await uploadAnimalPhoto(createdAnimal.id, photo)
       }
+
+      writeOwnedAnimalCache(user, createdAnimal)
 
       setForm(DEFAULT_FORM)
       setPhoto(null)
@@ -96,10 +112,7 @@ function RegisterAnimal() {
 
         <div className="register-animal-hero__panel">
           <FaPaw />
-          <h2>Fluxo simples, direto e pronto para adoção.</h2>
-          <p>
-            Os dados seguem para <strong>/api/animals</strong> e a imagem para <strong>/api/animals/{"{id}"}/foto</strong>.
-          </p>
+          <h1>Fluxo simples, direto e pronto para adoção.</h1>
         </div>
       </section>
 
@@ -135,21 +148,29 @@ function RegisterAnimal() {
 
               <label>
                 Raça
-                <input
-                  type="text"
+                <select
                   value={form.raca}
                   onChange={(event) => setForm((current) => ({ ...current, raca: event.target.value }))}
-                />
+                >
+                  <option value="">Selecione uma raça</option>
+                  {BREED_OPTIONS.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
               </label>
 
               <label>
-                Idade
+                Data de nascimento
                 <input
-                  type="number"
-                  min="0"
-                  value={form.idade}
-                  onChange={(event) => setForm((current) => ({ ...current, idade: event.target.value }))}
+                  type="date"
+                  value={form.dataNascimento}
+                  onChange={(event) => setForm((current) => ({ ...current, dataNascimento: event.target.value }))}
                 />
+                {form.dataNascimento && (
+                  <small style={{ display: "block", marginTop: "4px", color: "#666" }}>
+                    Idade aproximada: {calculateAge(form.dataNascimento)} ano(s)
+                  </small>
+                )}
               </label>
 
               <label>

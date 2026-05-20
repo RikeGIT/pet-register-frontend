@@ -183,7 +183,7 @@ function Home() {
             {authenticated ? (
               <>
                 <FaCheckCircle />
-                Seja bem vindo<strong>{user?.nome}</strong>. Você já pode adotar o seu pet e cadastrar animais para adoção.
+                Seja bem vindo<strong>{user?.nome}.</strong>Você já pode adotar o seu pet e cadastrar animais para adoção.
               </>
             ) : (
               <>

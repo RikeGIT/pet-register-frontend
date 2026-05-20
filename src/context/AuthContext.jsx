@@ -81,6 +81,7 @@ export function AuthProvider({ children }) {
         user,
         login,
         logout,
+        refreshUser: getMe,
         authenticated: !!user,
         loading
       }}

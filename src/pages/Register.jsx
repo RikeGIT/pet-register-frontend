@@ -15,6 +15,7 @@ function Register() {
     nome: "",
     email: "",
     cpf: "",
+    telefone: "",
     senha: "",
     perfil: "TUTOR"
   })
@@ -43,6 +44,11 @@ function Register() {
 
       await api.post("/api/usuarios", formData)
 
+      localStorage.setItem(
+        "pet-register:last-user-phone",
+        formData.telefone
+      )
+
       const elapsedTime = Date.now() - startTime
       const remainingTime = Math.max(0, MIN_LOADER_TIME_MS - elapsedTime)
 
@@ -50,7 +56,7 @@ function Register() {
         await new Promise((resolve) => setTimeout(resolve, remainingTime))
       }
 
-      navigate("/")
+      navigate("/login")
 
     } catch (err) {
 
@@ -146,6 +152,24 @@ function Register() {
                   placeholder="Digite seu CPF"
                   value={formData.cpf}
                   autoComplete="off"
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="telefone">
+                Telefone
+              </label>
+
+              <div className="auth-input">
+                <input
+                  id="telefone"
+                  type="tel"
+                  name="telefone"
+                  placeholder="(11) 99999-9999"
+                  value={formData.telefone}
+                  autoComplete="tel"
                   onChange={handleChange}
                 />
               </div>

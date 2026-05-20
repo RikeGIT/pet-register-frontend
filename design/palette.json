@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "generatedFrom": [
+      "src/index.css",
+      "src/styles/*"
+    ],
+    "date": "2026-05-20"
+  },
+  "primary": {
+    "accent": "#1f5d4d",
+    "accentHover": "#18483d",
+    "accentSoft": "rgba(31,93,77,0.14)"
+  },
+  "background": {
+    "appBg": "#f6efe3",
+    "surface": "rgba(255,255,255,0.9)",
+    "surfaceSolid": "#ffffff"
+  },
+  "text": {
+    "primary": "#18241d",
+    "secondary": "#607164"
+  },
+  "danger": {
+    "default": "#b42318",
+    "soft": "#fff1f1"
+  },
+  "borders": {
+    "default": "#d8ccb8"
+  },
+  "support": {
+    "cream": "#fbf8f1",
+    "creamAlt": "#fbf7ef",
+    "creamLight": "#fbfcfe",
+    "gold": "#8c6a32",
+    "paleGold": "#f5dfbc",
+    "pastel1": "#d8cce7",
+    "pastel2": "#c7d7e1",
+    "gray1": "#7c8896",
+    "gray2": "#93a1af",
+    "pinkLight": "#ffd2d2",
+    "greenLightBg": "#ecfdf3",
+    "greenDark1": "#027a48",
+    "greenDark2": "#0f7a36",
+    "greenBorder1": "#abefc6",
+    "greenBorder2": "#bfeacb",
+    "white": "#ffffff"
+  }
+}

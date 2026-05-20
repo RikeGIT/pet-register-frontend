@@ -1,3 +1,4 @@
+/* Custom CSS variables (palette) - keep these first so project CSS can rely on them */
 :root {
 	color-scheme: light;
 	--app-bg: #f6efe3;
@@ -6,8 +7,8 @@
 	--surface: rgba(255, 255, 255, 0.9);
 	--surface-solid: #ffffff;
 	--border: #d8ccb8;
-	--accent: #1f5d4d;
-	--accent-hover: #18483d;
+	--accent: #1f5d4d; /* primary verde conforme identidade */
+	--accent-hover: #18483d; /* hover do verde */
 	--accent-soft: rgba(31, 93, 77, 0.14);
 	--danger: #b42318;
 	--danger-soft: #fff1f1;
@@ -16,6 +17,8 @@
 	--radius-md: 14px;
 	--transition-fast: 180ms ease;
 }
+
+/* Tailwind removed: project uses plain CSS and variables declared above. */
 
 * {
 	margin: 0;

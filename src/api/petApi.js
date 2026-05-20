@@ -62,6 +62,11 @@ export async function getFeaturedAnimals() {
   return response.data
 }
 
+export async function getPublicServices(params = {}) {
+  const response = await api.get("/api/servicos", { params })
+  return response.data
+}
+
 export async function getPublicAnimal(id) {
   try {
     const response = await api.get(`/api/public/animals/${id}`)

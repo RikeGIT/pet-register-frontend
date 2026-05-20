@@ -5,6 +5,9 @@ import {
   FaBone,
   FaCheckCircle,
   FaDog,
+  FaCalendarAlt,
+  FaChevronLeft,
+  FaChevronRight,
   FaFilter,
   FaHeart,
   FaPaw,
@@ -22,10 +25,13 @@ import { useAuth } from "../context/AuthContext"
 import {
   createAdocao,
   getFeaturedAnimals,
-  getPublicAnimals
+  getPublicAnimals,
+  getPublicServices
 } from "../api/petApi"
 
 import "../styles/home.css"
+import dogHero from "../assets/dog-cat-hero.png"
+import about from "../assets/about.png"
 
 const SPECIES_OPTIONS = ["", "Cachorro", "Gato", "Coelho", "Ave"]
 
@@ -46,6 +52,31 @@ function unwrapPage(data) {
   }
 }
 
+// Testimonials sample data (kept as dynamic-ready array; can be replaced by API later)
+const TESTIMONIALS = [
+  {
+    id: 1,
+    name: "Carlos Santos",
+    role: "Tutor do Max (Golden Retriever)",
+    text: "O atendimento clínico foi impecável. A equipe demonstrou muito preparo técnico e carinho durante toda a internação.",
+    avatar: "https://i.pravatar.cc/150?img=11"
+  },
+  {
+    id: 2,
+    name: "Ana Oliveira",
+    role: "Tutora da Luna (Gato SRD)",
+    text: "Estrutura fantástica e profissionais muito bem qualificados. O diagnóstico foi rápido e o tratamento super eficaz.",
+    avatar: "https://i.pravatar.cc/150?img=5"
+  },
+  {
+    id: 3,
+    name: "Rafael Costa",
+    role: "Tutor do Thor (Bulldog)",
+    text: "Sempre faço o acompanhamento de rotina aqui. O sistema de agendamento é prático e o suporte é excelente.",
+    avatar: "https://i.pravatar.cc/150?img=12"
+  }
+]
+
 function Home() {
   const navigate = useNavigate()
   const { authenticated, user } = useAuth()
@@ -56,6 +87,13 @@ function Home() {
   const [species, setSpecies] = useState("")
   const [animals, setAnimals] = useState([])
   const [featuredAnimals, setFeaturedAnimals] = useState([])
+  // Serviços da ONG (dinâmicos via API)
+  const [services, setServices] = useState([])
+  const [servicesTotal, setServicesTotal] = useState(0)
+  const [servicePage, setServicePage] = useState(0)
+  const [servicesLoading, setServicesLoading] = useState(true)
+  const [servicesError, setServicesError] = useState("")
+  const [selectedService, setSelectedService] = useState(null)
   const [totalAnimals, setTotalAnimals] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -90,16 +128,41 @@ function Home() {
     }
   }
 
+  // Helpers para mapear campos comuns retornados pela API de serviços
+  function getServiceTitle(service) {
+    return service?.nome ?? service?.titulo ?? service?.servico ?? "Serviço institucional"
+  }
+
+  function getServiceDescription(service) {
+    return service?.descricaoCurta ?? service?.descricaoPublica ?? service?.descricao ?? service?.resumo ?? "Atendimento organizado para orientar, acolher e encaminhar cada necessidade da ONG."
+  }
+
+  const SERVICE_PAGE_SIZE = 4
+
+  // Carrega serviços públicos com paginação e limita visualização a 4 itens
+  async function loadServices(setter, setTotal, setLoading, setError, page = 0) {
+    setLoading(true)
+    setError("")
+
+    try {
+      const response = await getPublicServices({ page, size: SERVICE_PAGE_SIZE })
+      const pageData = Array.isArray(response) ? { items: response, total: response.length } : { items: response?.content ?? [], total: response?.totalElements ?? (response?.content?.length ?? 0) }
+
+      setter(pageData.items.slice(0, SERVICE_PAGE_SIZE))
+      setTotal(pageData.total)
+    } catch (err) {
+      setError("Não foi possível carregar os serviços no momento.")
+      setter([])
+      setTotal(0)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     const timer = window.setTimeout(loadAnimals, 180)
     return () => window.clearTimeout(timer)
   }, [search, species])
-
-  const heroStats = useMemo(() => ([
-    { label: "Animais na vitrine", value: totalAnimals, icon: FaDog },
-    { label: "Destaques ativos", value: featuredAnimals.length, icon: FaStar },
-    { label: "Fluxos prontos", value: "2", icon: FaUsers }
-  ]), [featuredAnimals.length, totalAnimals])
 
   function handleSelectAnimal(animal) {
     setAdoptionForm((current) => ({ ...current, animalId: String(animal.id) }))
@@ -147,8 +210,8 @@ function Home() {
         </Link>
 
         <nav className="home-nav">
-          <button type="button" onClick={() => scrollTo(featuredRef)}>Animais</button>
-          <button type="button" onClick={() => scrollTo(adoptionRef)}>Quero adotar</button>
+          <button type="button" onClick={() => scrollTo(featuredRef)}>Meus animais</button>
+          <button type="button" onClick={() => scrollTo(adoptionRef)}>Solicitar atendimento</button>
           <Link to="/pets/novo" className="home-nav__link">Cadastrar animal</Link>
           {authenticated ? (
             <Link to="/dashboard" className="home-nav__cta">Meu painel</Link>
@@ -161,7 +224,7 @@ function Home() {
       <section className="home-hero">
         <div className="home-hero__copy">
           <p className="home-eyebrow">Amor em movimento</p>
-          <h1>Encontre um amigo, publique um resgate, faça a diferença.</h1>
+          <h1>Encontre um amigo. Publique um resgate. Faça a diferença.</h1>
           <p className="home-hero__text">
             Uma vitrine pública para adoção responsável, com busca rápida, destaques da ONG e os fluxos prontos para solicitar adoção ou cadastrar um novo animal.
           </p>
@@ -172,7 +235,7 @@ function Home() {
               <FaArrowRight />
             </button>
             <button type="button" className="home-button home-button--ghost" onClick={() => scrollTo(adoptionRef)}>
-              Solicitar adoção
+              Solicitar atendimento
             </button>
             <Link to="/pets/novo" className="home-button home-button--ghost">
               Cadastrar animal
@@ -188,28 +251,44 @@ function Home() {
             ) : (
               <>
                 <FaUserShield />
-                Faça login para concluir adoções e divulgar novos animais.
+                Faça login para solicitar serviços, adotar um bixinho ou divulgar novos animais.
               </>
             )}
           </div>
+        </div>
 
-          <div className="home-stats">
-            {heroStats.map((stat) => {
-              const Icon = stat.icon
+        <div className="home-hero__image">
+          <img src={dogHero} alt="Cachorro" />
+        </div>
+      </section>
 
-              return (
-                <article key={stat.label} className="home-stat">
-                  <span className="home-stat__icon"><Icon /></span>
-                  <strong>{stat.value}</strong>
-                  <span>{stat.label}</span>
-                </article>
-              )
-            })}
+      {/* Testimonials section - plain CSS implementation */}
+      <section className="home-section testimonials-section" aria-labelledby="testimonials-title">
+        <div className="testimonials-inner">
+          <div className="testimonials-header">
+            <h2 id="testimonials-title">O que dizem sobre nós</h2>
+            <p>A confiança de quem deixa seus melhores amigos em nossas mãos.</p>
+          </div>
+
+          <div className="testimonials-grid">
+            {TESTIMONIALS.map((t) => (
+              <article key={t.id} className="testimonial-card">
+                <div className="testimonial-meta">
+                  <img className="testimonial-avatar" src={t.avatar} alt={t.name} />
+                  <div className="testimonial-identity">
+                    <strong className="testimonial-name">{t.name}</strong>
+                    <span className="testimonial-role">{t.role}</span>
+                  </div>
+                </div>
+
+                <p className="testimonial-text">“{t.text}”</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="home-section home-section--intro">
+      {/* <section className="home-section home-section--intro">
         <div className="home-intro-grid">
           <article>
             <FaHeart />
@@ -227,8 +306,8 @@ function Home() {
             <p>Um fluxo simples para publicar o animal com foto e descrição pública em poucos segundos.</p>
           </article>
         </div>
-      </section>
-      <section className="home-section home-section--catalog">
+      </section>*/}
+      {/* <section className="home-section home-section--catalog"> 
         <div className="home-toolbar">
           <div className="home-toolbar__title">
             <p className="home-section__eyebrow">Explorar</p>
@@ -278,6 +357,32 @@ function Home() {
             ))}
           </div>
         )}
+      </section>*/}
+      <section className="home-section home-section--about">
+        <div className="home-about__layout">
+          <div className="home-about__media">
+            <div className="home-about__frame">
+              <img src={about} alt="Sobre a ONG" />
+            </div>
+            <div className="home-about__badge">5+ anos de experiência</div>
+          </div>
+
+          <div className="home-about__content">
+            <p className="home-section__eyebrow">Quem somos</p>
+            <h2>Somos uma equipe dedicada a ajudar animais a encontrarem lares amorosos</h2>
+            <p>
+              Com anos de experiência no resgate e reabilitação, estamos comprometidos em oferecer o melhor cuidado para cada animal e apoiar famílias durante todo o processo de adoção e atendimento.
+            </p>
+
+            <ul className="home-about__list">
+              <li>Check-ups disponíveis</li>
+              <li>Animais para adoção</li>
+              <li>Cirurgias e castração</li>
+            </ul>
+
+            <button type="button" className="home-services__cta">Saiba mais</button>
+          </div>
+        </div>
       </section>
     </main>
   )

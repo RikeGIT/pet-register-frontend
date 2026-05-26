@@ -10,6 +10,11 @@ export async function getPublicAnimals(params = {}) {
   return response.data
 }
 
+export async function getPublicServices(params = {}) {
+  const response = await api.get("/api/servicos", { params })
+  return response.data
+}
+
 export async function getPublicAnimalById(id) {
   const response = await api.get(`/api/public/animals/${id}`)
   return response.data

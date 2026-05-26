@@ -1,15 +1,30 @@
-import { useEffect, useMemo, useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { FaArrowLeft, FaCamera, FaDog, FaPaw, FaSave, FaSignOutAlt, FaUserEdit } from "react-icons/fa"
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  FaArrowLeft,
+  FaCamera,
+  FaDog,
+  FaPaw,
+  FaSave,
+  FaSignOutAlt,
+  FaUserEdit,
+} from "react-icons/fa";
 
-import { useAuth } from "../context/AuthContext"
-import PawLoader from "../components/PawLoader"
-import AnimalCard from "../components/AnimalCard"
-import { getUsuario, listMyAnimals, updateAnimal, updateUsuario, uploadAnimalPhoto } from "../api/petApi"
+import { useAuth } from "../context/AuthContext";
+import PawLoader from "../components/PawLoader";
+import AnimalCard from "../components/AnimalCard";
+import {
+  getUsuario,
+  listMyAnimals,
+  updateAnimal,
+  updateUsuario,
+  uploadAnimalPhoto,
+} from "../api/petApi";
+import { formatCpf, formatPhone } from "../utils/formatters";
 
-import "../styles/dashboard.css"
+import "../styles/dashboard.css";
 
-const SPECIES_OPTIONS = ["Cachorro", "Gato", "Coelho", "Ave"]
+const SPECIES_OPTIONS = ["Cachorro", "Gato", "Coelho", "Ave"];
 
 const DEFAULT_ANIMAL_FORM = {
   nome: "",
@@ -21,25 +36,26 @@ const DEFAULT_ANIMAL_FORM = {
   descricaoPublica: "",
   publico: true,
   destaque: false,
-  statusAdocao: "DISPONIVEL"
-}
+  statusAdocao: "DISPONIVEL",
+};
 
 function buildProfileForm(user) {
-  const storedPhone = localStorage.getItem("pet-register:last-user-phone") ?? ""
+  const storedPhone =
+    localStorage.getItem("pet-register:last-user-phone") ?? "";
 
   return {
     nome: user?.nome ?? "",
     email: user?.email ?? "",
-    cpf: user?.cpf ?? "",
-    telefone: user?.telefone ?? storedPhone,
+    cpf: formatCpf(user?.cpf ?? ""),
+    telefone: formatPhone(user?.telefone ?? storedPhone),
     perfil: user?.perfil ?? "",
-    senha: user?.senha ?? ""
-  }
+    senha: user?.senha ?? "",
+  };
 }
 
 function buildAnimalForm(animal) {
   if (!animal) {
-    return { ...DEFAULT_ANIMAL_FORM }
+    return { ...DEFAULT_ANIMAL_FORM };
   }
 
   return {
@@ -52,8 +68,8 @@ function buildAnimalForm(animal) {
     descricaoPublica: animal.descricaoPublica ?? "",
     publico: animal.publico ?? true,
     destaque: animal.destaque ?? false,
-    statusAdocao: animal.statusAdocao ?? "DISPONIVEL"
-  }
+    statusAdocao: animal.statusAdocao ?? "DISPONIVEL",
+  };
 }
 
 function buildAnimalPayload(form) {
@@ -67,86 +83,98 @@ function buildAnimalPayload(form) {
     descricaoPublica: form.descricaoPublica,
     publico: form.publico,
     destaque: form.destaque,
-    statusAdocao: form.statusAdocao
-  }
+    statusAdocao: form.statusAdocao,
+  };
 }
 
 function Dashboard() {
-  const navigate = useNavigate()
-  const { user, logout, refreshUser } = useAuth()
+  const navigate = useNavigate();
+  const { user, logout, refreshUser } = useAuth();
 
-  const [animals, setAnimals] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [profileSubmitting, setProfileSubmitting] = useState(false)
-  const [animalSubmitting, setAnimalSubmitting] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
-  const [profileForm, setProfileForm] = useState(() => buildProfileForm(null))
-  const [selectedAnimalId, setSelectedAnimalId] = useState("")
-  const [animalForm, setAnimalForm] = useState(() => buildAnimalForm(null))
-  const [animalPhoto, setAnimalPhoto] = useState(null)
+  const [animals, setAnimals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [profileSubmitting, setProfileSubmitting] = useState(false);
+  const [animalSubmitting, setAnimalSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [profileForm, setProfileForm] = useState(() => buildProfileForm(null));
+  const [selectedAnimalId, setSelectedAnimalId] = useState("");
+  const [animalForm, setAnimalForm] = useState(() => buildAnimalForm(null));
+  const [animalPhoto, setAnimalPhoto] = useState(null);
 
   async function loadDashboard() {
-    setLoading(true)
-    setError("")
+    setLoading(true);
+    setError("");
 
     try {
       const [animalsResponse, userResponse] = await Promise.all([
         listMyAnimals(),
-        user?.id ? getUsuario(user.id) : Promise.resolve(null)
-      ])
+        user?.id ? getUsuario(user.id) : Promise.resolve(null),
+      ]);
 
-      setAnimals(Array.isArray(animalsResponse) ? animalsResponse : [])
-      setProfileForm(buildProfileForm({ ...user, ...userResponse }))
+      setAnimals(Array.isArray(animalsResponse) ? animalsResponse : []);
+      setProfileForm(buildProfileForm({ ...user, ...userResponse }));
     } catch (requestError) {
-      setError("Não foi possível carregar seus dados no momento.")
+      setError("Não foi possível carregar seus dados no momento.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadDashboard()
-  }, [])
+    loadDashboard();
+  }, []);
 
-  const myAnimals = useMemo(() => animals, [animals])
+  const myAnimals = useMemo(() => animals, [animals]);
 
   useEffect(() => {
     if (myAnimals.length === 0) {
-      setSelectedAnimalId("")
-      setAnimalForm(buildAnimalForm(null))
-      setAnimalPhoto(null)
-      return
+      setSelectedAnimalId("");
+      setAnimalForm(buildAnimalForm(null));
+      setAnimalPhoto(null);
+      return;
     }
 
-    const stillExists = myAnimals.some((animal) => String(animal.id) === String(selectedAnimalId))
+    const stillExists = myAnimals.some(
+      (animal) => String(animal.id) === String(selectedAnimalId),
+    );
 
     if (!stillExists) {
-      setSelectedAnimalId(String(myAnimals[0].id))
+      setSelectedAnimalId(String(myAnimals[0].id));
     }
-  }, [myAnimals, selectedAnimalId])
+  }, [myAnimals, selectedAnimalId]);
 
   const selectedAnimal = useMemo(
-    () => myAnimals.find((animal) => String(animal.id) === String(selectedAnimalId)) ?? null,
-    [myAnimals, selectedAnimalId]
-  )
+    () =>
+      myAnimals.find(
+        (animal) => String(animal.id) === String(selectedAnimalId),
+      ) ?? null,
+    [myAnimals, selectedAnimalId],
+  );
 
   useEffect(() => {
-    setAnimalForm(buildAnimalForm(selectedAnimal))
-    setAnimalPhoto(null)
-  }, [selectedAnimal?.id])
+    setAnimalForm(buildAnimalForm(selectedAnimal));
+    setAnimalPhoto(null);
+  }, [selectedAnimal?.id]);
 
-  const quickStats = useMemo(() => ([
-    { label: "Dados do perfil", value: 3, icon: FaUserEdit },
-    { label: "Animais sob sua gestão", value: myAnimals.length, icon: FaDog },
-    { label: "Perfil autenticado", value: user?.perfil || "USUÁRIO", icon: FaPaw }
-  ]), [myAnimals.length, user?.perfil])
+  const quickStats = useMemo(
+    () => [
+      { label: "Dados do perfil", value: 3, icon: FaUserEdit },
+      { label: "Animais sob sua gestão", value: myAnimals.length, icon: FaDog },
+      {
+        label: "Perfil autenticado",
+        value: user?.perfil || "USUÁRIO",
+        icon: FaPaw,
+      },
+    ],
+    [myAnimals.length, user?.perfil],
+  );
 
   async function handleSubmitProfile(event) {
-    event.preventDefault()
-    setProfileSubmitting(true)
-    setError("")
-    setSuccess("")
+    event.preventDefault();
+    setProfileSubmitting(true);
+    setError("");
+    setSuccess("");
 
     try {
       await updateUsuario(user.id, {
@@ -155,52 +183,52 @@ function Dashboard() {
         cpf: profileForm.cpf,
         telefone: profileForm.telefone,
         perfil: profileForm.perfil,
-        senha: profileForm.senha
-      })
+        senha: profileForm.senha,
+      });
 
       if (typeof refreshUser === "function") {
-        await refreshUser()
+        await refreshUser();
       }
 
-      setSuccess("Seu perfil foi atualizado com sucesso.")
+      setSuccess("Seu perfil foi atualizado com sucesso.");
     } catch (requestError) {
-      setError("Não foi possível atualizar seu perfil.")
+      setError("Não foi possível atualizar seu perfil.");
     } finally {
-      setProfileSubmitting(false)
+      setProfileSubmitting(false);
     }
   }
 
   async function handleSubmitAnimal(event) {
-    event.preventDefault()
-    setAnimalSubmitting(true)
-    setError("")
-    setSuccess("")
+    event.preventDefault();
+    setAnimalSubmitting(true);
+    setError("");
+    setSuccess("");
 
     if (!selectedAnimal) {
-      setError("Selecione um animal para editar.")
-      setAnimalSubmitting(false)
-      return
+      setError("Selecione um animal para editar.");
+      setAnimalSubmitting(false);
+      return;
     }
 
     try {
-      await updateAnimal(selectedAnimal.id, buildAnimalPayload(animalForm))
+      await updateAnimal(selectedAnimal.id, buildAnimalPayload(animalForm));
 
       if (animalPhoto) {
-        await uploadAnimalPhoto(selectedAnimal.id, animalPhoto)
+        await uploadAnimalPhoto(selectedAnimal.id, animalPhoto);
       }
 
-      await loadDashboard()
-      setSuccess("Animal atualizado com sucesso.")
+      await loadDashboard();
+      setSuccess("Animal atualizado com sucesso.");
     } catch (requestError) {
-      setError("Não foi possível atualizar o animal.")
+      setError("Não foi possível atualizar o animal.");
     } finally {
-      setAnimalSubmitting(false)
+      setAnimalSubmitting(false);
     }
   }
 
   function handleLogout() {
-    logout()
-    navigate("/login")
+    logout();
+    navigate("/login");
   }
 
   if (loading) {
@@ -208,7 +236,7 @@ function Dashboard() {
       <div className="dashboard-page dashboard-page--loading">
         <PawLoader label="Carregando seu perfil..." />
       </div>
-    )
+    );
   }
 
   return (
@@ -222,11 +250,16 @@ function Dashboard() {
           <p className="dashboard-eyebrow">Meu perfil</p>
           <h1>Olá, {user?.nome || "usuário"}.</h1>
           <p className="dashboard-subtitle">
-            Aqui você atualiza seus dados e edita os animais que colocou para adoção.
+            Aqui você atualiza seus dados e edita os animais que colocou para
+            adoção.
           </p>
         </div>
 
-        <button type="button" className="dashboard-logout" onClick={handleLogout}>
+        <button
+          type="button"
+          className="dashboard-logout"
+          onClick={handleLogout}
+        >
           <FaSignOutAlt />
           Sair
         </button>
@@ -234,20 +267,28 @@ function Dashboard() {
 
       <section className="dashboard-stats">
         {quickStats.map((stat) => {
-          const Icon = stat.icon
+          const Icon = stat.icon;
 
           return (
             <article key={stat.label} className="dashboard-stat-card">
-              <span className="dashboard-stat-card__icon"><Icon /></span>
+              <span className="dashboard-stat-card__icon">
+                <Icon />
+              </span>
               <strong>{stat.value}</strong>
               <span>{stat.label}</span>
             </article>
-          )
+          );
         })}
       </section>
 
-      {error && <div className="dashboard-alert dashboard-alert--error">{error}</div>}
-      {success && <div className="dashboard-alert dashboard-alert--success">{success}</div>}
+      {error && (
+        <div className="dashboard-alert dashboard-alert--error">{error}</div>
+      )}
+      {success && (
+        <div className="dashboard-alert dashboard-alert--success">
+          {success}
+        </div>
+      )}
 
       <section className="dashboard-grid">
         <article className="dashboard-panel">
@@ -265,7 +306,12 @@ function Dashboard() {
               <input
                 type="text"
                 value={profileForm.nome}
-                onChange={(event) => setProfileForm((current) => ({ ...current, nome: event.target.value }))}
+                onChange={(event) =>
+                  setProfileForm((current) => ({
+                    ...current,
+                    nome: event.target.value,
+                  }))
+                }
                 required
               />
             </label>
@@ -275,7 +321,12 @@ function Dashboard() {
               <input
                 type="email"
                 value={profileForm.email}
-                onChange={(event) => setProfileForm((current) => ({ ...current, email: event.target.value }))}
+                onChange={(event) =>
+                  setProfileForm((current) => ({
+                    ...current,
+                    email: event.target.value,
+                  }))
+                }
                 required
               />
             </label>
@@ -285,7 +336,12 @@ function Dashboard() {
               <input
                 type="text"
                 value={profileForm.cpf}
-                onChange={(event) => setProfileForm((current) => ({ ...current, cpf: event.target.value }))}
+                onChange={(event) =>
+                  setProfileForm((current) => ({
+                    ...current,
+                    cpf: formatCpf(event.target.value),
+                  }))
+                }
                 placeholder="000.000.000-00"
                 required
               />
@@ -296,7 +352,12 @@ function Dashboard() {
               <input
                 type="text"
                 value={profileForm.telefone}
-                onChange={(event) => setProfileForm((current) => ({ ...current, telefone: event.target.value }))}
+                onChange={(event) =>
+                  setProfileForm((current) => ({
+                    ...current,
+                    telefone: formatPhone(event.target.value),
+                  }))
+                }
                 placeholder="(11) 99999-9999"
               />
             </label>
@@ -306,7 +367,11 @@ function Dashboard() {
               <input type="text" value={user?.perfil || "USUÁRIO"} disabled />
             </label>
 
-            <button type="submit" className="dashboard-button" disabled={profileSubmitting}>
+            <button
+              type="submit"
+              className="dashboard-button"
+              disabled={profileSubmitting}
+            >
               <FaSave />
               {profileSubmitting ? "Salvando..." : "Salvar perfil"}
             </button>
@@ -336,18 +401,29 @@ function Dashboard() {
                     key={animal.id}
                     animal={animal}
                     featured={String(animal.id) === String(selectedAnimalId)}
-                    actionLabel={String(animal.id) === String(selectedAnimalId) ? "Em edição" : "Editar"}
+                    actionLabel={
+                      String(animal.id) === String(selectedAnimalId)
+                        ? "Em edição"
+                        : "Editar"
+                    }
                     onAction={() => setSelectedAnimalId(String(animal.id))}
                   />
                 ))
               )}
             </div>
 
-            <form className="dashboard-form dashboard-form--animal" onSubmit={handleSubmitAnimal}>
+            <form
+              className="dashboard-form dashboard-form--animal"
+              onSubmit={handleSubmitAnimal}
+            >
               <div className="dashboard-panel__header dashboard-panel__header--compact">
                 <div>
                   <p className="dashboard-eyebrow">Edição</p>
-                  <h3>{selectedAnimal ? `Editando ${selectedAnimal.nome}` : "Selecione um animal"}</h3>
+                  <h3>
+                    {selectedAnimal
+                      ? `Editando ${selectedAnimal.nome}`
+                      : "Selecione um animal"}
+                  </h3>
                 </div>
                 <FaCamera />
               </div>
@@ -359,7 +435,12 @@ function Dashboard() {
                     <input
                       type="text"
                       value={animalForm.nome}
-                      onChange={(event) => setAnimalForm((current) => ({ ...current, nome: event.target.value }))}
+                      onChange={(event) =>
+                        setAnimalForm((current) => ({
+                          ...current,
+                          nome: event.target.value,
+                        }))
+                      }
                       required
                     />
                   </label>
@@ -368,10 +449,17 @@ function Dashboard() {
                     Espécie
                     <select
                       value={animalForm.especie}
-                      onChange={(event) => setAnimalForm((current) => ({ ...current, especie: event.target.value }))}
+                      onChange={(event) =>
+                        setAnimalForm((current) => ({
+                          ...current,
+                          especie: event.target.value,
+                        }))
+                      }
                     >
                       {SPECIES_OPTIONS.map((option) => (
-                        <option key={option} value={option}>{option}</option>
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
                       ))}
                     </select>
                   </label>
@@ -381,7 +469,12 @@ function Dashboard() {
                     <input
                       type="text"
                       value={animalForm.raca}
-                      onChange={(event) => setAnimalForm((current) => ({ ...current, raca: event.target.value }))}
+                      onChange={(event) =>
+                        setAnimalForm((current) => ({
+                          ...current,
+                          raca: event.target.value,
+                        }))
+                      }
                     />
                   </label>
 
@@ -392,7 +485,12 @@ function Dashboard() {
                         type="number"
                         min="0"
                         value={animalForm.idade}
-                        onChange={(event) => setAnimalForm((current) => ({ ...current, idade: event.target.value }))}
+                        onChange={(event) =>
+                          setAnimalForm((current) => ({
+                            ...current,
+                            idade: event.target.value,
+                          }))
+                        }
                       />
                     </label>
 
@@ -403,7 +501,12 @@ function Dashboard() {
                         min="0"
                         step="0.1"
                         value={animalForm.peso}
-                        onChange={(event) => setAnimalForm((current) => ({ ...current, peso: event.target.value }))}
+                        onChange={(event) =>
+                          setAnimalForm((current) => ({
+                            ...current,
+                            peso: event.target.value,
+                          }))
+                        }
                       />
                     </label>
                   </div>
@@ -412,7 +515,12 @@ function Dashboard() {
                     Status de adoção
                     <select
                       value={animalForm.statusAdocao}
-                      onChange={(event) => setAnimalForm((current) => ({ ...current, statusAdocao: event.target.value }))}
+                      onChange={(event) =>
+                        setAnimalForm((current) => ({
+                          ...current,
+                          statusAdocao: event.target.value,
+                        }))
+                      }
                     >
                       <option value="DISPONIVEL">Disponível</option>
                       <option value="EM_PROCESSO">Em processo</option>
@@ -426,7 +534,12 @@ function Dashboard() {
                     <textarea
                       rows="4"
                       value={animalForm.descricaoPublica}
-                      onChange={(event) => setAnimalForm((current) => ({ ...current, descricaoPublica: event.target.value }))}
+                      onChange={(event) =>
+                        setAnimalForm((current) => ({
+                          ...current,
+                          descricaoPublica: event.target.value,
+                        }))
+                      }
                       required
                     />
                   </label>
@@ -436,7 +549,12 @@ function Dashboard() {
                     <textarea
                       rows="3"
                       value={animalForm.observacoes}
-                      onChange={(event) => setAnimalForm((current) => ({ ...current, observacoes: event.target.value }))}
+                      onChange={(event) =>
+                        setAnimalForm((current) => ({
+                          ...current,
+                          observacoes: event.target.value,
+                        }))
+                      }
                     />
                   </label>
 
@@ -445,7 +563,12 @@ function Dashboard() {
                       <input
                         type="checkbox"
                         checked={animalForm.publico}
-                        onChange={(event) => setAnimalForm((current) => ({ ...current, publico: event.target.checked }))}
+                        onChange={(event) =>
+                          setAnimalForm((current) => ({
+                            ...current,
+                            publico: event.target.checked,
+                          }))
+                        }
                       />
                       Publicar na vitrine
                     </label>
@@ -454,7 +577,12 @@ function Dashboard() {
                       <input
                         type="checkbox"
                         checked={animalForm.destaque}
-                        onChange={(event) => setAnimalForm((current) => ({ ...current, destaque: event.target.checked }))}
+                        onChange={(event) =>
+                          setAnimalForm((current) => ({
+                            ...current,
+                            destaque: event.target.checked,
+                          }))
+                        }
                       />
                       Marcar como destaque
                     </label>
@@ -465,11 +593,17 @@ function Dashboard() {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(event) => setAnimalPhoto(event.target.files?.[0] ?? null)}
+                      onChange={(event) =>
+                        setAnimalPhoto(event.target.files?.[0] ?? null)
+                      }
                     />
                   </label>
 
-                  <button type="submit" className="dashboard-button" disabled={animalSubmitting}>
+                  <button
+                    type="submit"
+                    className="dashboard-button"
+                    disabled={animalSubmitting}
+                  >
                     <FaSave />
                     {animalSubmitting ? "Salvando..." : "Salvar animal"}
                   </button>
@@ -484,7 +618,7 @@ function Dashboard() {
         </article>
       </section>
     </main>
-  )
+  );
 }
 
-export default Dashboard
+export default Dashboard;

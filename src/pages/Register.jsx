@@ -1,15 +1,15 @@
-import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
-import api from "../api/axios"
-import PawLoader from "../components/PawLoader"
-import dogImage from "../assets/dogs-login.jpg"
-import "../styles/auth.css"
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import api from "../api/axios";
+import PawLoader from "../components/PawLoader";
+import { formatCpf, formatPhone } from "../utils/formatters";
+import dogImage from "../assets/dogs-login.jpg";
+import "../styles/auth.css";
 
-const MIN_LOADER_TIME_MS = 900
+const MIN_LOADER_TIME_MS = 900;
 
 function Register() {
-
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     nome: "",
@@ -17,96 +17,92 @@ function Register() {
     cpf: "",
     telefone: "",
     senha: "",
-    perfil: "TUTOR"
-  })
+    perfil: "TUTOR",
+  });
 
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   function handleChange(e) {
+    const { name, value } = e.target;
 
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
+    if (name === "cpf") {
+      setFormData((current) => ({
+        ...current,
+        cpf: formatCpf(value),
+      }));
+      return;
+    }
+
+    if (name === "telefone") {
+      setFormData((current) => ({
+        ...current,
+        telefone: formatPhone(value),
+      }));
+      return;
+    }
+
+    setFormData((current) => ({
+      ...current,
+      [name]: value,
+    }));
   }
 
   async function handleSubmit(e) {
+    e.preventDefault();
 
-    e.preventDefault()
+    const startTime = Date.now();
 
-    const startTime = Date.now()
-
-    setError("")
-    setLoading(true)
+    setError("");
+    setLoading(true);
 
     try {
+      await api.post("/api/usuarios", formData);
 
-      await api.post("/api/usuarios", formData)
+      localStorage.setItem("pet-register:last-user-phone", formData.telefone);
 
-      localStorage.setItem(
-        "pet-register:last-user-phone",
-        formData.telefone
-      )
-
-      const elapsedTime = Date.now() - startTime
-      const remainingTime = Math.max(0, MIN_LOADER_TIME_MS - elapsedTime)
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, MIN_LOADER_TIME_MS - elapsedTime);
 
       if (remainingTime > 0) {
-        await new Promise((resolve) => setTimeout(resolve, remainingTime))
+        await new Promise((resolve) => setTimeout(resolve, remainingTime));
       }
 
-      navigate("/login")
-
+      navigate("/login");
     } catch (err) {
-
-      setError("Erro ao cadastrar usuário")
+      setError("Erro ao cadastrar usuário");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   return (
     <div className="auth-page">
       <div className="auth-page__media">
-        <img
-          src={dogImage}
-          alt="Pets"
-        />
+        <img src={dogImage} alt="Pets" />
       </div>
 
       <div className="auth-page__content">
         <div className="auth-card">
           <header className="auth-header">
-            <h1 className="auth-title">
-              Crie sua conta
-            </h1>
+            <h1 className="auth-title">Crie sua conta</h1>
 
             <p className="auth-description">
               Cadastre-se para acessar o sistema da clínica
             </p>
           </header>
 
-          <form
-            className="auth-form"
-            onSubmit={handleSubmit}
-          >
+          <form className="auth-form" onSubmit={handleSubmit}>
             {loading && (
               <div className="auth-loader-overlay">
                 <PawLoader compact label="Criando sua conta..." />
               </div>
             )}
 
-            {error && (
-              <div className="auth-error">
-                {error}
-              </div>
-            )}
+            {error && <div className="auth-error">{error}</div>}
 
             <div className="auth-field">
-              <label htmlFor="nome">
-                Nome
-              </label>
+              <label htmlFor="nome">Nome</label>
 
               <div className="auth-input">
                 <input
@@ -122,9 +118,7 @@ function Register() {
             </div>
 
             <div className="auth-field">
-              <label htmlFor="email">
-                Email
-              </label>
+              <label htmlFor="email">Email</label>
 
               <div className="auth-input">
                 <input
@@ -140,9 +134,7 @@ function Register() {
             </div>
 
             <div className="auth-field">
-              <label htmlFor="cpf">
-                CPF
-              </label>
+              <label htmlFor="cpf">CPF</label>
 
               <div className="auth-input">
                 <input
@@ -158,9 +150,7 @@ function Register() {
             </div>
 
             <div className="auth-field">
-              <label htmlFor="telefone">
-                Telefone
-              </label>
+              <label htmlFor="telefone">Telefone</label>
 
               <div className="auth-input">
                 <input
@@ -176,9 +166,7 @@ function Register() {
             </div>
 
             <div className="auth-field">
-              <label htmlFor="senha">
-                Senha
-              </label>
+              <label htmlFor="senha">Senha</label>
 
               <div className="auth-input">
                 <input
@@ -193,45 +181,7 @@ function Register() {
               </div>
             </div>
 
-            <div className="auth-field">
-              <label>
-                Perfil
-              </label>
-
-              <div className="auth-profile-options">
-                <button
-                  type="button"
-                  className={`auth-profile-option ${formData.perfil === "TUTOR" ? "is-active" : ""}`}
-                  onClick={() =>
-                    setFormData((current) => ({
-                      ...current,
-                      perfil: "TUTOR"
-                    }))
-                  }
-                >
-                  TUTOR
-                </button>
-
-                <button
-                  type="button"
-                  className={`auth-profile-option ${formData.perfil === "VETERINARIO" ? "is-active" : ""}`}
-                  onClick={() =>
-                    setFormData((current) => ({
-                      ...current,
-                      perfil: "VETERINARIO"
-                    }))
-                  }
-                >
-                  VETERINARIO
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="auth-button"
-            >
+            <button type="submit" disabled={loading} className="auth-button">
               {loading ? "Criando..." : "Criar conta"}
             </button>
           </form>
@@ -239,17 +189,14 @@ function Register() {
           <div className="auth-footer">
             <p>Já possui conta?</p>
 
-            <Link
-              to="/login"
-              className="auth-link"
-            >
+            <Link to="/login" className="auth-link">
               Fazer login
             </Link>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default Register
+export default Register;

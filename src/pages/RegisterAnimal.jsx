@@ -91,31 +91,6 @@ function RegisterAnimal() {
 
   return (
     <main className="register-animal-page">
-      <section className="register-animal-hero">
-        <div className="register-animal-hero__copy">
-          <Link to="/" className="register-animal-back">
-            <FaArrowLeft />
-            Voltar para a home
-          </Link>
-
-          <p className="register-animal-eyebrow">Divulgue um animal</p>
-          <h1>Cadastro dedicado para publicar um novo amigo.</h1>
-          <p>
-            Aqui o fluxo fica separado da home, com foco total em cadastrar o animal, descrever a história e subir a foto principal.
-          </p>
-
-          <div className="register-animal-badge">
-            <FaCheckCircle />
-            {authenticated ? `Logado como ${user?.nome}` : "Faça login para concluir o cadastro"}
-          </div>
-        </div>
-
-        <div className="register-animal-hero__panel">
-          <FaPaw />
-          <h1>Fluxo simples, direto e pronto para adoção.</h1>
-        </div>
-      </section>
-
       <section className="register-animal-card">
         {loading ? (
           <div className="register-animal-loading">

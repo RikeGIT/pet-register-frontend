@@ -1,0 +1,205 @@
+.meus-animais-page {
+  min-height: 10vh;
+  padding: 28px 20px 0px;
+  display: grid;
+  gap: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(31, 93, 77, 0.12), transparent 26%),
+    radial-gradient(circle at top right, rgba(171, 138, 87, 0.14), transparent 26%),
+    linear-gradient(180deg, #fbf7ef 0%, var(--app-bg) 100%);
+}
+
+.meus-animais-hero,
+.meus-animais-cards-grid,
+.meus-animais-empty--center {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+}
+
+.meus-animais-hero {
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(10px);
+  padding: clamp(24px, 4vw, 36px);
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 18px;
+}
+
+.meus-animais-hero__copy {
+  display: grid;
+  gap: 10px;
+}
+
+.meus-animais-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.meus-animais-hero h1 {
+  font-size: clamp(2.2rem, 4.6vw, 4rem);
+  line-height: 0.96;
+  letter-spacing: -0.07em;
+}
+
+.meus-animais-subtitle {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  max-width: 62ch;
+}
+
+.meus-animais-hero__stats {
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: rgba(31, 93, 77, 0.08);
+  border: 1px solid rgba(31, 93, 77, 0.12);
+  display: grid;
+  gap: 4px;
+  min-width: 160px;
+}
+
+.meus-animais-hero__stats strong {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.meus-animais-hero__stats span {
+  color: var(--text-secondary);
+}
+
+.meus-animais-empty {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px dashed var(--border);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.meus-animais-empty--center {
+  text-align: center;
+}
+
+.meus-animais-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+  gap: 18px;
+}
+
+.meus-animais-card {
+  min-height: 100%;
+  display: grid;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 32px rgba(24, 36, 29, 0.08);
+  overflow: hidden;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.meus-animais-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(31, 93, 77, 0.18);
+  box-shadow: 0 22px 34px rgba(24, 36, 29, 0.11);
+}
+
+.meus-animais-card__media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(24, 36, 29, 0.06), rgba(24, 36, 29, 0.28)),
+    linear-gradient(135deg, rgba(31, 93, 77, 0.08), rgba(171, 138, 87, 0.12));
+}
+
+.meus-animais-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.01);
+}
+
+.meus-animais-card__badge {
+  position: absolute;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 16px rgba(24, 36, 29, 0.12);
+}
+
+.meus-animais-card__body {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 14px 16px 16px;
+}
+
+.meus-animais-card__info {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.meus-animais-card__body h3 {
+  font-size: 1.2rem;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.meus-animais-card__body p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.meus-animais-card__action {
+  margin-left: auto;
+  margin-top: 0;
+  color: var(--accent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 1080px) {
+  .meus-animais-hero {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .meus-animais-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .meus-animais-page {
+    padding: 16px;
+  }
+
+  .meus-animais-hero,
+  .meus-animais-cards-grid,
+  .meus-animais-empty--center {
+    width: 100%;
+  }
+
+  .meus-animais-hero {
+    padding: 20px;
+  }
+
+  .meus-animais-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react"
-import { useLocation, useParams, useNavigate } from "react-router-dom"
+import { useEffect, useState } from "react";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import {
   FaArrowLeft,
   FaEnvelope,
@@ -9,116 +9,155 @@ import {
   FaShareAlt,
   FaShieldAlt,
   FaStar,
-  FaTimes
-} from "react-icons/fa"
-import PawLoader from "../components/PawLoader"
-import { getPublicAnimal, getUsuario } from "../api/petApi"
-import "../styles/animal-detail.css"
+  FaTimes,
+} from "react-icons/fa";
+import PawLoader from "../components/PawLoader";
+import { getPublicAnimal, getUsuario } from "../api/petApi";
+import "../styles/animal-detail.css";
 
 function mapStatusLabel(status) {
-  const normalized = (status || "DISPONIVEL").toString().toUpperCase()
+  const normalized = (status || "DISPONIVEL").toString().toUpperCase();
 
   const labels = {
     DISPONIVEL: "Disponível para adoção",
     EM_PROCESSO: "Em processo de adoção",
     RESERVADO: "Reservado",
-    ADOTADO: "Adotado"
-  }
+    ADOTADO: "Adotado",
+  };
 
-  return labels[normalized] || normalized.replaceAll("_", " ")
+  return labels[normalized] || normalized.replaceAll("_", " ");
 }
 
 function formatAge(age) {
-  if (age === null || age === undefined || age === "") return "Idade não informada"
+  if (age === null || age === undefined || age === "")
+    return "Idade não informada";
 
-  const numericAge = Number(age)
-  if (Number.isNaN(numericAge)) return String(age)
+  const numericAge = Number(age);
+  if (Number.isNaN(numericAge)) return String(age);
 
-  return numericAge === 1 ? "1 ano" : `${numericAge} anos`
+  return numericAge === 1 ? "1 ano" : `${numericAge} anos`;
 }
 
 function formatWeight(weight) {
-  if (weight === null || weight === undefined || weight === "") return "Peso não informado"
+  if (weight === null || weight === undefined || weight === "")
+    return "Peso não informado";
 
-  const numericWeight = Number(weight)
-  if (Number.isNaN(numericWeight)) return String(weight)
+  const numericWeight = Number(weight);
+  if (Number.isNaN(numericWeight)) return String(weight);
 
-  return `${numericWeight.toLocaleString("pt-BR")} kg`
+  return `${numericWeight.toLocaleString("pt-BR")} kg`;
 }
 
 function getOwnerName(tutor) {
-  if (!tutor) return "Equipe responsável"
+  if (!tutor) return "Equipe responsável";
 
-  return tutor.nome || tutor.razaoSocial || tutor.nomeFantasia || "Equipe responsável"
+  return (
+    tutor.nome ||
+    tutor.razaoSocial ||
+    tutor.nomeFantasia ||
+    "Equipe responsável"
+  );
 }
 
 function getTutorContact(tutor) {
-  if (!tutor) return ""
+  if (!tutor) return "";
 
-  return tutor.telefone || tutor.celular || tutor.whatsapp || tutor.fone || ""
+  return tutor.telefone || tutor.celular || tutor.whatsapp || tutor.fone || "";
 }
 
 function ContactModal({ tutor, onClose }) {
-  const tutorPhone = getTutorContact(tutor)
+  const tutorPhone = getTutorContact(tutor);
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
       <div className="modal-card">
-        <button className="modal-close" onClick={onClose} aria-label="Fechar modal">
+        <button
+          className="modal-close"
+          onClick={onClose}
+          aria-label="Fechar modal"
+        >
           <FaTimes />
         </button>
         <p className="modal-eyebrow">Contato para adoção</p>
         <h3>Fale com o responsável por este pet</h3>
         {tutor ? (
           <div className="modal-body">
-            <p className="modal-body__name"><strong>{getOwnerName(tutor)}</strong></p>
-            {tutorPhone ? <p><FaPhone /> {tutorPhone}</p> : <p><FaPhone /> Telefone não cadastrado</p>}
-            {tutor.email && <p><FaEnvelope /> {tutor.email}</p>}
-            <p className="modal-note">Esta vitrine conecta você diretamente ao responsável para combinar os próximos passos da adoção.</p>
+            <p className="modal-body__name">
+              <strong>{getOwnerName(tutor)}</strong>
+            </p>
+            {tutorPhone ? (
+              <p>
+                <FaPhone /> {tutorPhone}
+              </p>
+            ) : (
+              <p>
+                <FaPhone /> Telefone não cadastrado
+              </p>
+            )}
+            {tutor.email && (
+              <p>
+                <FaEnvelope /> {tutor.email}
+              </p>
+            )}
+            <p className="modal-note">
+              Esta vitrine conecta você diretamente ao responsável para combinar
+              os próximos passos da adoção.
+            </p>
           </div>
         ) : (
           <div className="modal-body">
-            <p>Informações de contato não estão disponíveis. Tente entrar em contato com a ONG responsável pela publicação.</p>
+            <p>
+              Informações de contato não estão disponíveis. Tente entrar em
+              contato com a ONG responsável pela publicação.
+            </p>
           </div>
         )}
         <div className="modal-actions">
-          <button className="btn btn-secondary" onClick={onClose}>Fechar</button>
+          <button className="btn btn-secondary" onClick={onClose}>
+            Fechar
+          </button>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function AnimalDetail() {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const initialAnimal = location.state?.animal ?? null
-  const [animal, setAnimal] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const initialAnimal = location.state?.animal ?? null;
+  const [animal, setAnimal] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    let mounted = true
+    let mounted = true;
 
     async function load() {
-      setLoading(true)
+      setLoading(true);
       try {
-        const publicAnimal = await getPublicAnimal(id)
-        const baseAnimal = initialAnimal && String(initialAnimal.id) === String(id) ? initialAnimal : null
+        const publicAnimal = await getPublicAnimal(id);
+        const baseAnimal =
+          initialAnimal && String(initialAnimal.id) === String(id)
+            ? initialAnimal
+            : null;
         const mergedAnimal = {
           ...publicAnimal,
-          ...baseAnimal
-        }
+          ...baseAnimal,
+        };
 
-        if (mounted) setAnimal(mergedAnimal)
+        if (mounted) setAnimal(mergedAnimal);
 
-        const tutorId = mergedAnimal?.tutorId ?? mergedAnimal?.tutor?.id ?? mergedAnimal?.usuario?.id
+        const tutorId =
+          mergedAnimal?.tutorId ??
+          mergedAnimal?.tutor?.id ??
+          mergedAnimal?.usuario?.id;
         if (tutorId) {
           try {
-            const user = await getUsuario(tutorId)
+            const user = await getUsuario(tutorId);
             if (mounted && user) {
-              setAnimal((previous) => ({ ...previous, tutor: user }))
+              setAnimal((previous) => ({ ...previous, tutor: user }));
             }
           } catch (userError) {
             // ignore tutor fetch errors
@@ -127,20 +166,22 @@ function AnimalDetail() {
       } catch (error) {
         // ignore; the not-found state handles this
       } finally {
-        if (mounted) setLoading(false)
+        if (mounted) setLoading(false);
       }
     }
 
-    load()
-    return () => { mounted = false }
-  }, [id, initialAnimal])
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [id, initialAnimal]);
 
   if (loading) {
     return (
       <div className="page-loader">
         <PawLoader label="Carregando perfil do pet..." />
       </div>
-    )
+    );
   }
 
   if (!animal) {
@@ -148,49 +189,54 @@ function AnimalDetail() {
       <main className="animal-detail-page">
         <div className="animal-detail-inner">
           <p>Animal não encontrado.</p>
-          <button className="btn btn-secondary" onClick={() => navigate(-1)}>Voltar</button>
+          <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+            Voltar
+          </button>
         </div>
       </main>
-    )
+    );
   }
 
-  const tutor = animal.tutor || animal.usuario || null
-  const statusLabel = mapStatusLabel(animal.statusAdocao)
-  const description = animal.descricaoPublica || animal.observacoes || "Sem descrição pública disponível."
+  const tutor = animal.tutor || animal.usuario || null;
+  const statusLabel = mapStatusLabel(animal.statusAdocao);
+  const description =
+    animal.descricaoPublica ||
+    animal.observacoes ||
+    "Sem descrição pública disponível.";
   const facts = [
     { label: "Espécie", value: animal.especie || "Não informada" },
     { label: "Raça", value: animal.raca || "Sem informação" },
     { label: "Idade", value: formatAge(animal.idade) },
-    { label: "Peso", value: formatWeight(animal.peso) }
-  ]
+    { label: "Peso", value: formatWeight(animal.peso) },
+  ];
   const highlights = [
     animal.destaque ? "Animal em destaque" : null,
     animal.publico ? "Publicação visível na vitrine" : null,
-    animal.statusAdocao ? statusLabel : null
-  ].filter(Boolean)
+    animal.statusAdocao ? statusLabel : null,
+  ].filter(Boolean);
 
   const shareAnimal = async () => {
-    const shareUrl = window.location.href
+    const shareUrl = window.location.href;
 
     if (navigator.share) {
       try {
         await navigator.share({
           title: animal.nome,
           text: `Veja o perfil de adoção de ${animal.nome}`,
-          url: shareUrl
-        })
-        return
+          url: shareUrl,
+        });
+        return;
       } catch (shareError) {
         // fall back to clipboard
       }
     }
 
     try {
-      await navigator.clipboard.writeText(shareUrl)
+      await navigator.clipboard.writeText(shareUrl);
     } catch (clipboardError) {
       // ignore clipboard failures
     }
-  }
+  };
 
   return (
     <main className="animal-detail-page">
@@ -214,7 +260,9 @@ function AnimalDetail() {
 
           <div className="animal-hero__content">
             <div className="animal-hero__topline">
-              <span className="animal-badge animal-badge--status">{statusLabel}</span>
+              <span className="animal-badge animal-badge--status">
+                {statusLabel}
+              </span>
               {animal.destaque && (
                 <span className="animal-badge animal-badge--highlight">
                   <FaStar />
@@ -228,7 +276,9 @@ function AnimalDetail() {
                 <p className="animal-eyebrow">Perfil de adoção</p>
                 <h1>{animal.nome}</h1>
                 <p className="animal-subtitle">
-                  {animal.especie || "Animal"} • {animal.raca || "Raça não informada"} • {formatAge(animal.idade)}
+                  {animal.especie || "Animal"} •{" "}
+                  {animal.raca || "Raça não informada"} •{" "}
+                  {formatAge(animal.idade)}
                 </p>
               </div>
 
@@ -251,10 +301,18 @@ function AnimalDetail() {
             </div>
 
             <div className="animal-hero__actions">
-              <button type="button" className="btn btn-primary" onClick={() => setShowModal(true)}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setShowModal(true)}
+              >
                 Quero adotar
               </button>
-              <button type="button" className="btn btn-secondary" onClick={shareAnimal}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={shareAnimal}
+              >
                 <FaShareAlt />
                 Compartilhar
               </button>
@@ -263,7 +321,9 @@ function AnimalDetail() {
             <div className="animal-hero__info-strip">
               <div>
                 <span className="animal-strip__label">Publicação</span>
-                <strong>{animal.publico ? "Visível na vitrine" : "Apenas interna"}</strong>
+                <strong>
+                  {animal.publico ? "Visível na vitrine" : "Apenas interna"}
+                </strong>
               </div>
               <div>
                 <span className="animal-strip__label">Tutor</span>
@@ -271,7 +331,11 @@ function AnimalDetail() {
               </div>
               <div>
                 <span className="animal-strip__label">Observação</span>
-                <strong>{animal.observacoes ? "Há notas internas" : "Sem observações internas"}</strong>
+                <strong>
+                  {animal.observacoes
+                    ? "Há notas internas"
+                    : "Sem observações internas"}
+                </strong>
               </div>
             </div>
           </div>
@@ -284,9 +348,14 @@ function AnimalDetail() {
               <h2>A história deste pet</h2>
               <p className="animal-description">{description}</p>
               {highlights.length > 0 && (
-                <div className="animal-tags" aria-label="Características em destaque">
+                <div
+                  className="animal-tags"
+                  aria-label="Características em destaque"
+                >
                   {highlights.map((item) => (
-                    <span key={item} className="animal-tag">{item}</span>
+                    <span key={item} className="animal-tag">
+                      {item}
+                    </span>
                   ))}
                 </div>
               )}
@@ -311,7 +380,8 @@ function AnimalDetail() {
               <p className="animal-panel__eyebrow">Contato</p>
               <h2>Fale com o responsável</h2>
               <p className="animal-contact-card__text">
-                Se você quer adotar, abra o contato direto para confirmar disponibilidade e combinar os próximos passos.
+                Se você quer adotar, abra o contato direto para confirmar
+                disponibilidade e combinar os próximos passos.
               </p>
 
               <div className="animal-contact-card__person">
@@ -350,17 +420,23 @@ function AnimalDetail() {
                 </div>
               </div>
 
-              <button type="button" className="btn btn-primary btn-block" onClick={() => setShowModal(true)}>
+              <button
+                type="button"
+                className="btn btn-primary btn-block"
+                onClick={() => setShowModal(true)}
+              >
                 Entrar em contato
               </button>
             </div>
           </aside>
         </section>
 
-        {showModal && <ContactModal tutor={tutor} onClose={() => setShowModal(false)} />}
+        {showModal && (
+          <ContactModal tutor={tutor} onClose={() => setShowModal(false)} />
+        )}
       </div>
     </main>
-  )
+  );
 }
 
-export default AnimalDetail
+export default AnimalDetail;

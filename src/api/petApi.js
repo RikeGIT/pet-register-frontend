@@ -68,18 +68,8 @@ export async function getPublicServices(params = {}) {
 }
 
 export async function getPublicAnimal(id) {
-  try {
-    const response = await api.get(`/api/public/animals/${id}`)
-    return response.data
-  } catch (err) {
-    // Fallback: some backends expose single animal at /api/animals/{id}
-    try {
-      const resp2 = await api.get(`/api/animals/${id}`)
-      return resp2.data
-    } catch (err2) {
-      throw err
-    }
-  }
+  const response = await api.get(`/api/public/animals/${id}`)
+  return response.data
 }
 
 export async function createAnimal(payload) {
@@ -94,6 +84,11 @@ export async function listMyAnimals() {
 
 export async function updateAnimal(id, payload) {
   const response = await api.put(`/api/animals/${id}`, payload)
+  return response.data
+}
+
+export async function deleteAnimal(id) {
+  const response = await api.delete(`/api/animals/${id}`)
   return response.data
 }
 

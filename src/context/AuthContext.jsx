@@ -1,79 +1,65 @@
-import { createContext, useContext, useEffect, useState } from "react"
-import api from "../api/axios"
+import { createContext, useContext, useEffect, useState } from "react";
+import api from "../api/axios";
 
-const AuthContext = createContext()
-const MIN_LOADING_TIME_MS = 1400
+const AuthContext = createContext();
+const MIN_LOADING_TIME_MS = 1400;
 
 export function AuthProvider({ children }) {
-
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   async function login(email, senha) {
     const response = await api.post("/api/auth/login", {
       email,
-      senha
-    })
+      senha,
+    });
 
-    localStorage.setItem(
-      "token",
-      response.data.accessToken
-    )
+    localStorage.setItem("token", response.data.accessToken);
 
-    localStorage.setItem(
-      "refreshToken",
-      response.data.refreshToken
-    )
+    localStorage.setItem("refreshToken", response.data.refreshToken);
 
-    await getMe()
+    await getMe();
   }
 
   async function getMe() {
-
     try {
+      const response = await api.get("/api/auth/me");
 
-      const response = await api.get("/api/auth/me")
-
-      setUser(response.data)
-
+      setUser(response.data);
     } catch (error) {
-
-      logout()
+      logout();
     }
   }
 
   function logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
 
-    localStorage.removeItem("token")
-    localStorage.removeItem("refreshToken")
-
-    setUser(null)
+    setUser(null);
   }
 
   useEffect(() => {
-
     async function loadUser() {
-      const startTime = Date.now()
+      const startTime = Date.now();
 
-      const token = localStorage.getItem("token")
+      const token = localStorage.getItem("token");
 
       if (token) {
-        await getMe()
+        await getMe();
       }
 
-      const elapsedTime = Date.now() - startTime
-      const remainingTime = Math.max(0, MIN_LOADING_TIME_MS - elapsedTime)
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, MIN_LOADING_TIME_MS - elapsedTime);
 
       if (remainingTime > 0) {
-        await new Promise((resolve) => setTimeout(resolve, remainingTime))
+        await new Promise((resolve) => setTimeout(resolve, remainingTime));
       }
 
-      setLoading(false)
+      setLoading(false);
     }
 
-    loadUser()
-
-  }, [])
+    loadUser();
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -83,14 +69,14 @@ export function AuthProvider({ children }) {
         logout,
         refreshUser: getMe,
         authenticated: !!user,
-        loading
+        loading,
       }}
     >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export function useAuth() {
-  return useContext(AuthContext)
+  return useContext(AuthContext);
 }

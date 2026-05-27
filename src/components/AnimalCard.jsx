@@ -1,12 +1,38 @@
-import { FaPaw, FaHeart, FaRegStar } from "react-icons/fa"
+import { FaPaw, FaHeart, FaRegStar } from "react-icons/fa";
 
-function AnimalCard({ animal, featured = false, onAction, actionLabel = "Ver mais" }) {
-  const badgeClass = `animal-card__badge animal-card__badge--${
-    (animal.statusAdocao || "disponivel").toLowerCase()
-  }`
+const DESCRIPTION_LIMIT = 140;
+
+function truncateText(text, limit = DESCRIPTION_LIMIT) {
+  const value = String(text || "").trim();
+
+  if (value.length <= limit) {
+    return value;
+  }
+
+  return `${value.slice(0, limit).trimEnd()}...`;
+}
+
+function AnimalCard({
+  animal,
+  featured = false,
+  onAction,
+  actionLabel = "Ver mais",
+}) {
+  const badgeClass = `animal-card__badge animal-card__badge--${(
+    animal.statusAdocao || "disponivel"
+  ).toLowerCase()}`;
+
+  const description =
+    animal.descricaoPublica ||
+    animal.observacoes ||
+    "Animal pronto para receber uma nova família.";
+
+  const shortDescription = truncateText(description);
 
   return (
-    <article className={`animal-card ${featured ? "animal-card--featured" : ""}`}>
+    <article
+      className={`animal-card ${featured ? "animal-card--featured" : ""}`}
+    >
       <div className="animal-card__media">
         {animal.fotoUrl ? (
           <img src={animal.fotoUrl} alt={animal.nome} />
@@ -34,9 +60,7 @@ function AnimalCard({ animal, featured = false, onAction, actionLabel = "Ver mai
           <span>{animal.especie}</span>
         </div>
 
-        <p className="animal-card__text">
-          {animal.descricaoPublica || animal.observacoes || "Animal pronto para receber uma nova família."}
-        </p>
+        <p className="animal-card__text">{shortDescription}</p>
 
         <dl className="animal-card__meta">
           <div>
@@ -54,14 +78,18 @@ function AnimalCard({ animal, featured = false, onAction, actionLabel = "Ver mai
         </dl>
 
         {onAction && (
-          <button type="button" className="animal-card__action" onClick={onAction}>
+          <button
+            type="button"
+            className="animal-card__action"
+            onClick={onAction}
+          >
             <FaHeart />
             {actionLabel}
           </button>
         )}
       </div>
     </article>
-  )
+  );
 }
 
-export default AnimalCard
+export default AnimalCard;

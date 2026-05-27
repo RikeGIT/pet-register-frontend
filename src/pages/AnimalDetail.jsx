@@ -12,7 +12,8 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import PawLoader from "../components/PawLoader";
-import { getPublicAnimal, getUsuario } from "../api/petApi";
+import { getUsuario } from "../api/petApi";
+import { getPublicAnimalById } from "../api/portalApi";
 import "../styles/animal-detail.css";
 
 function mapStatusLabel(status) {
@@ -62,7 +63,77 @@ function getOwnerName(tutor) {
 function getTutorContact(tutor) {
   if (!tutor) return "";
 
-  return tutor.telefone || tutor.celular || tutor.whatsapp || tutor.fone || "";
+  return (
+    tutor.telefone ||
+    tutor.celular ||
+    tutor.whatsapp ||
+    tutor.fone ||
+    tutor.phone ||
+    ""
+  );
+}
+
+function resolveTutor(animal) {
+  const rawTutor = animal?.tutor || animal?.usuario || null;
+
+  const tutor = rawTutor
+    ? {
+        ...rawTutor,
+        nome:
+          rawTutor.nome ||
+          rawTutor.razaoSocial ||
+          rawTutor.nomeFantasia ||
+          rawTutor.tutorNome ||
+          rawTutor.nomeCompleto ||
+          "",
+        telefone:
+          rawTutor.telefone ||
+          rawTutor.celular ||
+          rawTutor.whatsapp ||
+          rawTutor.fone ||
+          rawTutor.phone ||
+          "",
+        email: rawTutor.email || rawTutor.emailContato || "",
+        endereco:
+          rawTutor.endereco ||
+          rawTutor.localizacao ||
+          rawTutor.enderecoCompleto ||
+          "",
+      }
+    : {
+        id: animal?.tutorId ?? animal?.usuarioId ?? null,
+        nome:
+          animal?.tutorNome ||
+          animal?.usuarioNome ||
+          animal?.responsavelNome ||
+          "",
+        telefone:
+          animal?.tutorTelefone ||
+          animal?.usuarioTelefone ||
+          animal?.responsavelTelefone ||
+          "",
+        email:
+          animal?.tutorEmail ||
+          animal?.usuarioEmail ||
+          animal?.responsavelEmail ||
+          "",
+        endereco:
+          animal?.tutorEndereco ||
+          animal?.usuarioEndereco ||
+          animal?.localizacao ||
+          animal?.responsavelEndereco ||
+          "",
+        perfil:
+          animal?.tutorPerfil || animal?.usuarioPerfil || "ONG / responsável",
+      };
+
+  return tutor.nome ||
+    tutor.telefone ||
+    tutor.email ||
+    tutor.endereco ||
+    tutor.id
+    ? tutor
+    : null;
 }
 
 function ContactModal({ tutor, onClose }) {
@@ -97,6 +168,11 @@ function ContactModal({ tutor, onClose }) {
             {tutor.email && (
               <p>
                 <FaEnvelope /> {tutor.email}
+              </p>
+            )}
+            {tutor.endereco && (
+              <p>
+                <FaMapMarkerAlt /> {tutor.endereco}
               </p>
             )}
             <p className="modal-note">
@@ -136,12 +212,13 @@ function AnimalDetail() {
 
     async function load() {
       setLoading(true);
+
+      const baseAnimal =
+        initialAnimal && String(initialAnimal.id) === String(id)
+          ? initialAnimal
+          : null;
       try {
-        const publicAnimal = await getPublicAnimal(id);
-        const baseAnimal =
-          initialAnimal && String(initialAnimal.id) === String(id)
-            ? initialAnimal
-            : null;
+        const publicAnimal = await getPublicAnimalById(id);
         const mergedAnimal = {
           ...publicAnimal,
           ...baseAnimal,
@@ -157,14 +234,22 @@ function AnimalDetail() {
           try {
             const user = await getUsuario(tutorId);
             if (mounted && user) {
-              setAnimal((previous) => ({ ...previous, tutor: user }));
+              setAnimal((previous) => ({
+                ...previous,
+                tutor: {
+                  ...(previous?.tutor ?? {}),
+                  ...user,
+                },
+              }));
             }
           } catch (userError) {
             // ignore tutor fetch errors
           }
         }
       } catch (error) {
-        // ignore; the not-found state handles this
+        if (mounted && baseAnimal) {
+          setAnimal(baseAnimal);
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -197,7 +282,7 @@ function AnimalDetail() {
     );
   }
 
-  const tutor = animal.tutor || animal.usuario || null;
+  const tutor = resolveTutor(animal);
   const statusLabel = mapStatusLabel(animal.statusAdocao);
   const description =
     animal.descricaoPublica ||

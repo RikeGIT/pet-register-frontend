@@ -1,19 +1,20 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 
-import App from './App'
-import './index.css'
+import App from "./App";
+import "./index.css";
+import "./styles/toast.css";
 
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider } from "./context/AuthContext";
+import { ToastProvider } from "./context/ToastContext";
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-
+ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
-
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-
-  </BrowserRouter>
-)
+    <ToastProvider>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </ToastProvider>
+  </BrowserRouter>,
+);

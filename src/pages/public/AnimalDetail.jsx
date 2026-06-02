@@ -11,10 +11,11 @@ import {
   FaStar,
   FaTimes,
 } from "react-icons/fa";
-import PawLoader from "../components/PawLoader";
-import { getUsuario } from "../api/petApi";
-import { getPublicAnimalById } from "../api/portalApi";
-import "../styles/animal-detail.css";
+import PawLoader from "../../components/PawLoader";
+import { getUsuario } from "../../api/petApi";
+import { getPublicAnimalById } from "../../api/portalApi";
+import "../../styles/animal-detail.css";
+import { formatAgeDisplay } from "../../utils/formatters";
 
 function mapStatusLabel(status) {
   const normalized = (status || "DISPONIVEL").toString().toUpperCase();
@@ -27,16 +28,6 @@ function mapStatusLabel(status) {
   };
 
   return labels[normalized] || normalized.replaceAll("_", " ");
-}
-
-function formatAge(age) {
-  if (age === null || age === undefined || age === "")
-    return "Idade não informada";
-
-  const numericAge = Number(age);
-  if (Number.isNaN(numericAge)) return String(age);
-
-  return numericAge === 1 ? "1 ano" : `${numericAge} anos`;
 }
 
 function formatWeight(weight) {
@@ -291,7 +282,10 @@ function AnimalDetail() {
   const facts = [
     { label: "Espécie", value: animal.especie || "Não informada" },
     { label: "Raça", value: animal.raca || "Sem informação" },
-    { label: "Idade", value: formatAge(animal.idade) },
+    {
+      label: "Idade",
+      value: formatAgeDisplay({ idade: animal.idade }),
+    },
     { label: "Peso", value: formatWeight(animal.peso) },
   ];
   const highlights = [
@@ -363,7 +357,7 @@ function AnimalDetail() {
                 <p className="animal-subtitle">
                   {animal.especie || "Animal"} •{" "}
                   {animal.raca || "Raça não informada"} •{" "}
-                  {formatAge(animal.idade)}
+                  {formatAgeDisplay({ idade: animal.idade })}
                 </p>
               </div>
 

@@ -1,5 +1,9 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import api from "../api/axios";
+import {
+  requestLoginOtp,
+  verifyOtp as verifyOtpRequest,
+} from "../api/portalApi";
 
 const AuthContext = createContext();
 const MIN_LOADING_TIME_MS = 1400;
@@ -9,16 +13,19 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   async function login(email, senha) {
-    const response = await api.post("/api/auth/login", {
-      email,
-      senha,
-    });
+    return requestLoginOtp(email, senha);
+  }
 
-    localStorage.setItem("token", response.data.accessToken);
+  async function verifyOtp(email, codigo) {
+    const response = await verifyOtpRequest(email, codigo);
 
-    localStorage.setItem("refreshToken", response.data.refreshToken);
+    localStorage.setItem("token", response.accessToken);
+    localStorage.setItem("refreshToken", response.refreshToken);
 
-    await getMe();
+    const meResponse = await api.get("/api/auth/me");
+    setUser(meResponse.data);
+
+    return meResponse.data;
   }
 
   async function getMe() {
@@ -66,6 +73,7 @@ export function AuthProvider({ children }) {
       value={{
         user,
         login,
+        verifyOtp,
         logout,
         refreshUser: getMe,
         authenticated: !!user,

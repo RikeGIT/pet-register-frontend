@@ -19,21 +19,20 @@ import {
   FaUpload,
 } from "react-icons/fa";
 
-import PawLoader from "../components/PawLoader";
-import AnimalCard from "../components/AnimalCard";
-import { useAuth } from "../context/AuthContext";
-import { createAdocao } from "../api/petApi";
+import PawLoader from "../../components/PawLoader";
+import AnimalCard from "../../components/AnimalCard";
+import { useAuth } from "../../context/AuthContext";
+import { createAdocao } from "../../api/petApi";
 import {
   getFeaturedAnimals,
   getPublicAnimals,
   getPublicServices,
-} from "../api/portalApi";
+  getPublicTaxonomias,
+} from "../../api/portalApi";
 
-import "../styles/home.css";
-import dogHero from "../assets/dog-cat-hero.png";
-import about from "../assets/about.png";
-
-const SPECIES_OPTIONS = ["", "Cachorro", "Gato", "Coelho", "Ave"];
+import "../../styles/home.css";
+import dogHero from "../../assets/dog-cat-hero.png";
+import about from "../../assets/about.png";
 
 const DEFAULT_ADOPTION_FORM = {
   animalId: "",
@@ -85,6 +84,7 @@ function Home() {
 
   const [search, setSearch] = useState("");
   const [species, setSpecies] = useState("");
+  const [speciesOptions, setSpeciesOptions] = useState([]);
   const [animals, setAnimals] = useState([]);
   const [featuredAnimals, setFeaturedAnimals] = useState([]);
   // Serviços da ONG (dinâmicos via API)
@@ -123,13 +123,28 @@ function Home() {
       const publicPage = unwrapPage(publicResponse);
       const featuredPage = unwrapPage(featuredResponse);
 
-      setAnimals(publicPage.items);
-      setFeaturedAnimals(featuredPage.items);
+      const normalize = (item) => ({
+        ...item,
+        idade: item.idade ?? null,
+      });
+
+      setAnimals(publicPage.items.map(normalize));
+      setFeaturedAnimals(featuredPage.items.map(normalize));
       setTotalAnimals(publicPage.total);
     } catch (requestError) {
       setError("Não foi possível carregar os animais no momento.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadTaxonomias() {
+    try {
+      const response = await getPublicTaxonomias();
+      const parsed = Array.isArray(response) ? response : [];
+      setSpeciesOptions(parsed.map((item) => item.nome));
+    } catch (requestError) {
+      setSpeciesOptions([]);
     }
   }
 
@@ -193,6 +208,10 @@ function Home() {
     const timer = window.setTimeout(loadAnimals, 180);
     return () => window.clearTimeout(timer);
   }, [search, species]);
+
+  useEffect(() => {
+    loadTaxonomias();
+  }, []);
 
   function handleSelectAnimal(animal) {
     setAdoptionForm((current) => ({ ...current, animalId: String(animal.id) }));
@@ -265,8 +284,8 @@ function Home() {
             {authenticated ? (
               <>
                 <FaCheckCircle />
-                Seja bem vindo<strong>{user?.nome}.</strong>Você já pode adotar
-                o seu pet e cadastrar animais para adoção.
+                Seja bem vindo! Você já pode adotar o seu pet e cadastrar
+                animais para adoção.
               </>
             ) : (
               <>
@@ -361,7 +380,7 @@ function Home() {
                 value={species}
                 onChange={(event) => setSpecies(event.target.value)}
               >
-                {SPECIES_OPTIONS.map((option) => (
+                {["", ...speciesOptions].map((option) => (
                   <option key={option || "all"} value={option}>
                     {option || "Todas as espécies"}
                   </option>
@@ -401,6 +420,7 @@ function Home() {
           </div>
         )}
       </section>
+      {/*
       <section className="home-section home-section--about">
         <div className="home-about__layout">
           <div className="home-about__media">
@@ -429,6 +449,50 @@ function Home() {
             </ul>
 
             <button type="button" className="home-services__cta">
+              Saiba mais
+            </button>
+          </div>
+        </div>
+      </section>*/}
+      <section className="home-section home-section--team">
+        <div className="home-team__layout">
+          <div className="home-team__media">
+            <img
+              alt="Nossa equipe"
+              className="home-team__image"
+              data-alt="A professional and candid shot of a diverse group of veterinarians and volunteers smiling together in a modern, clean animal clinic. The environment is bright and welcoming, with high-end equipment and minimalist design. The lighting is natural and soft, creating a trustworthy and reliable atmosphere. Everyone is wearing professional attire, reflecting the competence and heart-led dedication of the Pet Register team. The overall style is corporate yet warm and editorial."
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5wquvgzcBX27ma0EmBcnO75YDouBA_a4kNcCFSzTYNXGXdh7jIwsi6xXoj_B50se3c_rLMVtKPGr82gP_e0OovNPQFawMpav9qK1TdiYhGYbTd00AteqHPlz3yrgt1mCA2YsymQTfLr7LN5KMEH-Kl4gQAyhgVv_tnfH4oMq_DLYa14R67pLld6wWBylA1LZOwtekc2u07a0_r5aSRpmsg-QBl_634Cv-XfaKqo7Y5BOBS7rNKU7nPmXGwMyTeyzh_Xo-q1YHtjJE"
+            />
+          </div>
+
+          <div className="home-team__content">
+            <p className="home-section__eyebrow">Quem somos</p>
+            <h2>
+              Somos uma equipe dedicada a ajudar animais a encontrarem lares
+              amorosos
+            </h2>
+            <p className="home-team__text">
+              Com anos de experiência no resgate e reabilitação, estamos
+              comprometidos em oferecer o melhor cuidado para cada animal e
+              apoiar famílias durante todo o processo de adoção e atendimento.
+            </p>
+
+            <ul className="home-team__list">
+              <li>
+                <FaCheckCircle />
+                <span>Check-ups disponíveis</span>
+              </li>
+              <li>
+                <FaCheckCircle />
+                <span>Animais para adoção</span>
+              </li>
+              <li>
+                <FaCheckCircle />
+                <span>Cirurgias e castração</span>
+              </li>
+            </ul>
+
+            <button type="button" className="home-team__button">
               Saiba mais
             </button>
           </div>

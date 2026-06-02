@@ -1,11 +1,18 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { FaPaw } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
 import "../styles/home.css";
 
 function Navbar() {
+  const navigate = useNavigate();
   const { authenticated, user, logout } = useAuth();
+  const isAdmin = String(user?.perfil ?? "").toUpperCase() === "ADMIN";
+
+  function handleLogout() {
+    logout();
+    navigate("/login");
+  }
 
   return (
     <header className="home-header">
@@ -44,6 +51,16 @@ function Navbar() {
         >
           Cadastrar animal
         </NavLink>
+        {authenticated && isAdmin && (
+          <NavLink
+            to="/admin"
+            className={({ isActive }) =>
+              `home-nav__link${isActive ? " is-active" : ""}`
+            }
+          >
+            Painel admin
+          </NavLink>
+        )}
         {authenticated ? (
           <>
             <NavLink
@@ -52,9 +69,13 @@ function Navbar() {
                 `home-nav__cta${isActive ? " is-active" : ""}`
               }
             >
-              Meu painel
+              Meu perfil
             </NavLink>
-            <button type="button" className="home-nav__cta" onClick={logout}>
+            <button
+              type="button"
+              className="home-nav__cta"
+              onClick={handleLogout}
+            >
               Sair
             </button>
           </>

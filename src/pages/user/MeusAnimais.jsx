@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { listMyAnimals } from "../api/petApi";
-import "../styles/meus-animais.css";
+import { listMyAnimals } from "../../api/petApi";
+import { formatAgeDisplay } from "../../utils/formatters";
+import "../../styles/meus-animais.css";
 
 function normalizeAnimal(animal) {
   return {
@@ -11,6 +12,7 @@ function normalizeAnimal(animal) {
     especie: animal?.especie ?? "Cachorro",
     raca: animal?.raca ?? "",
     fotoUrl: animal?.fotoUrl ?? "",
+    idade: animal?.idade ?? null,
   };
 }
 
@@ -101,6 +103,9 @@ export default function MeusAnimais() {
                 <div className="meus-animais-card__info">
                   <h3>{animal.nome}</h3>
                   <p>{animal.raca || "Raça não informada"}</p>
+                  <small className="meus-animais-card__age">
+                    {formatAgeDisplay({ idade: animal.idade })}
+                  </small>
                 </div>
                 <span className="meus-animais-card__action">Abrir edição</span>
               </div>

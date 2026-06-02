@@ -1,4 +1,5 @@
 import { FaPaw, FaHeart, FaRegStar } from "react-icons/fa";
+import { formatAgeDisplay } from "../utils/formatters";
 
 const DESCRIPTION_LIMIT = 140;
 
@@ -28,6 +29,8 @@ function AnimalCard({
     "Animal pronto para receber uma nova família.";
 
   const shortDescription = truncateText(description);
+
+  const ageLabel = formatAgeDisplay({ idade: animal.idade });
 
   return (
     <article
@@ -69,7 +72,7 @@ function AnimalCard({
           </div>
           <div>
             <dt>Idade</dt>
-            <dd>{animal.idade ?? "-"}</dd>
+            <dd>{ageLabel}</dd>
           </div>
           <div>
             <dt>Peso</dt>

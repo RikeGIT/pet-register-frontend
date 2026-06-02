@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import api from "../api/axios";
-import PawLoader from "../components/PawLoader";
-import { formatCpf, formatPhone } from "../utils/formatters";
-import dogImage from "../assets/dogs-login.jpg";
-import "../styles/auth.css";
+import { createRegistrationOtp } from "../../api/portalApi";
+import PawLoader from "../../components/PawLoader";
+import { formatCpf, formatPhone } from "../../utils/formatters";
+import dogImage from "../../assets/dogs-login.jpg";
+import "../../styles/auth.css";
 
 const MIN_LOADER_TIME_MS = 900;
 
@@ -57,9 +57,14 @@ function Register() {
     setLoading(true);
 
     try {
-      await api.post("/api/usuarios", formData);
+      const challenge = await createRegistrationOtp(formData);
 
       localStorage.setItem("pet-register:last-user-phone", formData.telefone);
+      localStorage.setItem(
+        "pet-register:otp-email",
+        challenge?.email || formData.email,
+      );
+      localStorage.setItem("pet-register:otp-flow", "register");
 
       const elapsedTime = Date.now() - startTime;
       const remainingTime = Math.max(0, MIN_LOADER_TIME_MS - elapsedTime);
@@ -68,9 +73,16 @@ function Register() {
         await new Promise((resolve) => setTimeout(resolve, remainingTime));
       }
 
-      navigate("/login");
+      navigate("/otp", {
+        replace: true,
+        state: {
+          email: challenge?.email || formData.email,
+          flow: "register",
+          message: challenge?.message,
+        },
+      });
     } catch (err) {
-      setError("Erro ao cadastrar usuário");
+      setError(err?.response?.data?.message || "Erro ao cadastrar usuário");
     } finally {
       setLoading(false);
     }

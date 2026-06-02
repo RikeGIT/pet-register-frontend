@@ -1,17 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { FaArrowLeft, FaTrash } from "react-icons/fa";
 
 import {
   deleteAnimal,
+  getPublicTaxonomias,
   listMyAnimals,
   listMySolicitacoes,
   updateAnimal,
   uploadAnimalPhoto,
-} from "../api/petApi";
-import "../styles/animal-detail.css";
+} from "../../api/petApi";
+import "../../styles/animal-detail.css";
 
-const SPECIES_OPTIONS = ["Cachorro", "Gato", "Coelho", "Ave"];
 const STATUS_OPTIONS = [
   { value: "DISPONIVEL", label: "Disponível" },
   { value: "EM_PROCESSO", label: "Em processo" },
@@ -25,7 +25,7 @@ function normalizeAnimal(animal) {
     nome: animal?.nome ?? "",
     especie: animal?.especie ?? "Cachorro",
     raca: animal?.raca ?? "",
-    dataNascimento: animal?.dataNascimento ?? "",
+    idade: animal?.idade ?? null,
     peso: animal?.peso ?? "",
     statusAdocao: animal?.statusAdocao ?? "DISPONIVEL",
     descricaoPublica: animal?.descricaoPublica ?? "",
@@ -42,7 +42,8 @@ function buildUpdatePayload(animal) {
     nome: animal.nome,
     especie: animal.especie,
     raca: animal.raca,
-    dataNascimento: animal.dataNascimento,
+    idade: animal.idade ? Number(animal.idade) : null,
+    fotoUrl: animal.fotoUrl ?? null,
     peso: animal.peso,
     statusAdocao: animal.statusAdocao,
     descricaoPublica: animal.descricaoPublica,
@@ -69,6 +70,31 @@ export default function MeusAnimalDetail() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [linkedSolicitacoes, setLinkedSolicitacoes] = useState([]);
+  const [taxonomias, setTaxonomias] = useState([]);
+
+  const speciesOptions = useMemo(() => {
+    const base = taxonomias.map((item) => item.nome);
+
+    if (formAnimal?.especie && !base.includes(formAnimal.especie)) {
+      return [formAnimal.especie, ...base];
+    }
+
+    return base;
+  }, [formAnimal?.especie, taxonomias]);
+
+  const breedOptions = useMemo(() => {
+    const especieSelecionada = taxonomias.find(
+      (item) => item.nome === formAnimal?.especie,
+    );
+
+    const base = (especieSelecionada?.racas || []).map((item) => item.nome);
+
+    if (formAnimal?.raca && !base.includes(formAnimal.raca)) {
+      return [formAnimal.raca, ...base];
+    }
+
+    return base;
+  }, [formAnimal?.especie, taxonomias]);
 
   async function carregarAnimal() {
     setLoading(true);
@@ -100,8 +126,13 @@ export default function MeusAnimalDetail() {
         return;
       }
 
+      const display = {
+        ...encontrado,
+        idade: encontrado.idade ?? null,
+      };
+
       setAnimal(encontrado);
-      setFormAnimal(encontrado);
+      setFormAnimal(display);
       setPreviewFoto(encontrado.fotoUrl);
       setLinkedSolicitacoes(
         solicitacoesNormalizadas.filter(
@@ -125,14 +156,45 @@ export default function MeusAnimalDetail() {
     carregarAnimal();
   }, [id]);
 
+  useEffect(() => {
+    async function carregarTaxonomias() {
+      try {
+        const response = await getPublicTaxonomias();
+        setTaxonomias(Array.isArray(response) ? response : []);
+      } catch (error) {
+        setTaxonomias([]);
+      }
+    }
+
+    carregarTaxonomias();
+  }, []);
+
   function handleChange(event) {
     if (!formAnimal) return;
 
     const { name, value, type, checked } = event.target;
 
-    setFormAnimal({
-      ...formAnimal,
-      [name]: type === "checkbox" ? checked : value,
+    setFormAnimal((prev) => {
+      const updated = {
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      };
+
+      // Preserve existing fotoUrl if present and not being overwritten
+      if (!updated.fotoUrl && prev?.fotoUrl) {
+        updated.fotoUrl = prev.fotoUrl;
+      }
+
+      // Ensure previewFoto remains if available
+      if (
+        !updated.previewFoto &&
+        typeof previewFoto === "string" &&
+        previewFoto
+      ) {
+        // keep previewFoto state as the source of truth for displayed image
+      }
+
+      return updated;
     });
   }
 
@@ -257,8 +319,11 @@ export default function MeusAnimalDetail() {
 
         <section className="animal-hero animal-hero--editable">
           <div className="animal-hero__media">
-            {previewFoto ? (
-              <img src={previewFoto} alt={formAnimal.nome} />
+            {previewFoto || formAnimal?.fotoUrl ? (
+              <img
+                src={previewFoto || formAnimal?.fotoUrl}
+                alt={formAnimal.nome}
+              />
             ) : (
               <div className="animal-hero__placeholder">
                 <span>Sem foto disponível</span>
@@ -320,6 +385,7 @@ export default function MeusAnimalDetail() {
                   <img
                     src={
                       previewFoto ||
+                      formAnimal?.fotoUrl ||
                       "https://via.placeholder.com/600x420?text=Pet"
                     }
                     alt={formAnimal.nome}
@@ -356,10 +422,17 @@ export default function MeusAnimalDetail() {
                     <select
                       name="especie"
                       value={formAnimal.especie}
-                      onChange={handleChange}
+                      onChange={(event) => {
+                        const selectedEspecie = event.target.value;
+                        setFormAnimal((current) => ({
+                          ...current,
+                          especie: selectedEspecie,
+                          raca: "",
+                        }));
+                      }}
                       className="animal-edit-input"
                     >
-                      {SPECIES_OPTIONS.map((option) => (
+                      {speciesOptions.map((option) => (
                         <option key={option} value={option}>
                           {option}
                         </option>
@@ -369,21 +442,28 @@ export default function MeusAnimalDetail() {
 
                   <label className="animal-edit-field">
                     <span>Raça</span>
-                    <input
-                      type="text"
+                    <select
                       name="raca"
                       value={formAnimal.raca}
                       onChange={handleChange}
                       className="animal-edit-input"
-                    />
+                    >
+                      <option value="">Selecione uma raça</option>
+                      {breedOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
                   </label>
 
                   <label className="animal-edit-field">
-                    <span>Data de nascimento</span>
+                    <span>Idade (anos)</span>
                     <input
-                      type="date"
-                      name="dataNascimento"
-                      value={formAnimal.dataNascimento}
+                      type="number"
+                      min="0"
+                      name="idade"
+                      value={formAnimal.idade ?? ""}
                       onChange={handleChange}
                       className="animal-edit-input"
                     />

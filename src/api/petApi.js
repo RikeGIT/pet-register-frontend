@@ -72,6 +72,11 @@ export async function getPublicAnimal(id) {
   return response.data
 }
 
+export async function getPublicTaxonomias() {
+  const response = await api.get("/api/public/taxonomias/especies")
+  return response.data
+}
+
 export async function createAnimal(payload) {
   const response = await api.post("/api/animals", payload)
   return response.data

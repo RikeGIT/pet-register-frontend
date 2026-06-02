@@ -1,65 +1,65 @@
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { FaEnvelope, FaLock } from "react-icons/fa"
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FaEnvelope, FaLock } from "react-icons/fa";
 
-import { useAuth } from "../context/AuthContext"
-import PawLoader from "../components/PawLoader"
+import { useAuth } from "../../context/AuthContext";
+import PawLoader from "../../components/PawLoader";
 
-import "../styles/auth.css"
-import dogImage from "../assets/dogs-login.jpg"
+import "../../styles/auth.css";
+import dogImage from "../../assets/dogs-login.jpg";
 
-const MIN_LOADER_TIME_MS = 900
+const MIN_LOADER_TIME_MS = 900;
 
 function Login() {
+  const navigate = useNavigate();
 
-  const navigate = useNavigate()
+  const { login } = useAuth();
 
-  const { login } = useAuth()
-
-  const [email, setEmail] = useState("")
-  const [senha, setSenha] = useState("")
-  const [erro, setErro] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [erro, setErro] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
+    e.preventDefault();
 
-    e.preventDefault()
+    const startTime = Date.now();
 
-    const startTime = Date.now()
-
-    setErro("")
-    setLoading(true)
+    setErro("");
+    setLoading(true);
 
     try {
+      const challenge = await login(email, senha);
 
-      await login(email, senha)
-
-      const elapsedTime = Date.now() - startTime
-      const remainingTime = Math.max(0, MIN_LOADER_TIME_MS - elapsedTime)
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, MIN_LOADER_TIME_MS - elapsedTime);
 
       if (remainingTime > 0) {
-        await new Promise((resolve) => setTimeout(resolve, remainingTime))
+        await new Promise((resolve) => setTimeout(resolve, remainingTime));
       }
 
-      navigate("/")
+      localStorage.setItem("pet-register:otp-email", challenge?.email || email);
+      localStorage.setItem("pet-register:otp-flow", "login");
 
+      navigate("/otp", {
+        replace: true,
+        state: {
+          email: challenge?.email || email,
+          flow: "login",
+          message: challenge?.message,
+        },
+      });
     } catch (error) {
-
-      setErro("Email ou senha inválidos")
-
+      setErro(error?.response?.data?.message || "Email ou senha inválidos");
     } finally {
-
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   return (
     <div className="auth-page">
       <div className="auth-page__media">
-        <img
-          src={dogImage}
-          alt="Pets"
-        />
+        <img src={dogImage} alt="Pets" />
       </div>
 
       <div className="auth-page__content">
@@ -69,35 +69,24 @@ function Login() {
               Adota<span>Patos</span>
             </h1>
 
-            <h2 className="auth-title">
-              Faça seu login
-            </h2>
+            <h2 className="auth-title">Faça seu login</h2>
 
             <p className="auth-description">
               Entre para acessar a plataforma da clínica
             </p>
           </header>
 
-          <form
-            className="auth-form"
-            onSubmit={handleSubmit}
-          >
+          <form className="auth-form" onSubmit={handleSubmit}>
             {loading && (
               <div className="auth-loader-overlay">
                 <PawLoader compact label="Entrando na plataforma..." />
               </div>
             )}
 
-            {erro && (
-              <div className="auth-error">
-                {erro}
-              </div>
-            )}
+            {erro && <div className="auth-error">{erro}</div>}
 
             <div className="auth-field">
-              <label htmlFor="email">
-                Email
-              </label>
+              <label htmlFor="email">Email</label>
 
               <div className="auth-input">
                 <FaEnvelope />
@@ -114,9 +103,7 @@ function Login() {
             </div>
 
             <div className="auth-field">
-              <label htmlFor="senha">
-                Senha
-              </label>
+              <label htmlFor="senha">Senha</label>
 
               <div className="auth-input">
                 <FaLock />
@@ -132,21 +119,14 @@ function Login() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="auth-button"
-            >
+            <button type="submit" disabled={loading} className="auth-button">
               {loading ? "Entrando..." : "Entrar"}
             </button>
 
             <div className="auth-footer">
               <p>Não possui conta?</p>
 
-              <Link
-                to="/register"
-                className="auth-link"
-              >
+              <Link to="/register" className="auth-link">
                 Cadastre-se
               </Link>
             </div>
@@ -154,7 +134,7 @@ function Login() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default Login
+export default Login;
